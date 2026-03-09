@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 6: The One Where We Visualize Data</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;padding:12px 16px;max-width:900px;margin:0 auto;min-height:100vh}
+  :root{--red:#d62828;--cyan:#00b4d8;--yellow:#f4a261;--navy:#1d3557;--black:#111;--teal:#2a9d8f;--purple:#6c5ce7;--orange:#e76f51;--gray:#636e72;--dark:#2d3436;--light:#e8e8e8;--off:#f5f5f0;--white:#fff}
+  .slide{position:relative;min-height:480px;border-radius:12px;padding:40px 36px 36px;overflow:hidden}
+  .geo-svg{position:absolute;width:70px;height:70px;overflow:hidden;pointer-events:none}
+  .geo-tr{top:0;right:0}.geo-bl{bottom:0;left:0}
+  .geo-line{height:4px;background:linear-gradient(90deg,var(--red),var(--cyan),var(--yellow),var(--navy));border-radius:2px;margin:16px 0}
+  h1.big{font-size:32px;font-weight:900;text-transform:uppercase;letter-spacing:-.5px;line-height:1.15;margin:0;color:var(--black)}
+  .subtitle{font-size:16px;color:var(--gray);font-weight:500;margin:6px 0 0;line-height:1.4}
+  .red{color:var(--red);font-weight:800}
+  .poll-btn{padding:12px 20px;border-radius:8px;border:2px solid #ddd;background:var(--white);color:var(--dark);font-weight:700;font-size:15px;cursor:pointer;text-align:left;width:100%;transition:all .2s;display:block;margin-bottom:10px}
+  .poll-btn.active{color:#fff}
+  .reveal-box{background:var(--white);border-radius:8px;border:2px solid #ddd;overflow:hidden;margin-bottom:10px;transition:all .3s}
+  .reveal-btn{width:100%;padding:12px 16px;background:var(--white);border:none;text-align:left;cursor:pointer;font-weight:800;font-size:14px;color:var(--dark);display:flex;justify-content:space-between;align-items:center}
+  .reveal-content{padding:12px 16px;font-size:14px;line-height:1.6;color:var(--dark);border-top:1px solid #eee;display:none}
+  .reveal-box.open .reveal-content{display:block}
+  .reveal-box.open .reveal-btn{color:var(--navy)}
+  .step-btn{display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:8px;border-radius:8px;border:2px solid #ddd;background:var(--white);cursor:pointer;transition:all .2s}
+  .step-btn.active{border-color:var(--red);background:#d628280c}
+  .step-detail{margin:8px 0 0;font-size:14px;color:var(--dark);line-height:1.6;display:none}
+  .step-btn.active .step-detail{display:block}
+  .chart-sel-btn{padding:8px 14px;border-radius:8px;border:2px solid #ddd;background:var(--white);color:var(--dark);font-weight:800;font-size:13px;cursor:pointer;display:inline-block;margin:0 4px 8px}
+  .chart-sel-btn.active{color:#fff}
+  .info-box{border-radius:8px;padding:12px}
+  .nav-dots{display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+  .nav-dot{height:10px;border-radius:10px;border:none;cursor:pointer;transition:all .3s;font-size:9px;font-weight:800;color:#fff;line-height:10px}
+  .bottom-nav{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:10px 0}
+  .nav-btn{padding:8px 20px;color:#fff;border:none;border-radius:6px;font-weight:800;font-size:13px;text-transform:uppercase;cursor:pointer}
+  .footer{text-align:center;padding:8px 0;margin-top:4px}
+  .dm-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .dm-label{font-weight:700;font-size:14px;width:130px;color:var(--dark)}
+  .dm-btn{padding:5px 14px;border-radius:16px;font-size:12px;font-weight:700;border:none;cursor:pointer;transition:all .2s}
+  .hands-step{text-align:left;padding:12px 16px;border-radius:8px;border:2px solid #ddd;background:var(--white);cursor:pointer;transition:all .2s;margin-bottom:8px}
+  .hands-step.active{border-color:var(--navy);background:#1d35570c}
+  .hands-step .detail{display:none;margin-top:8px;font-size:14px;color:var(--dark);line-height:1.6}
+  .hands-step.active .detail{display:block}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{padding:10px 14px;text-align:left;font-weight:700}
+  td{padding:6px 14px;border-bottom:1px solid var(--light)}
+</style>
+</head>
+<body>
+
+<div class="nav-dots" id="navDots"></div>
+<div id="slideContainer"></div>
+<div class="bottom-nav">
+  <button class="nav-btn" id="prevBtn" style="background:var(--navy)" onclick="go(-1)">← Back</button>
+  <span id="slideCount" style="font-size:12px;color:var(--gray);font-weight:700"></span>
+  <button class="nav-btn" id="nextBtn" style="background:var(--red)" onclick="go(1)">Next →</button>
+</div>
+<div class="footer">
+  <span style="font-size:11px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:1px">Exploring Data Science with </span>
+  <span style="font-size:13px;font-weight:900;letter-spacing:2px">F<span style="color:var(--red)">·</span>R<span style="color:var(--cyan)">·</span>I<span style="color:var(--yellow)">·</span>E<span style="color:var(--red)">·</span>N<span style="color:var(--cyan)">·</span>D<span style="color:var(--yellow)">·</span>S</span>
+</div>
+
+<script>
+const geoSVG = `<svg width="70" height="70" viewBox="0 0 70 70"><circle cx="17" cy="17" r="15" fill="#d62828" opacity=".8"/><path d="M35,0 A17,17 0 0,1 52,17 L35,17Z" fill="#00b4d8" opacity=".8"/><path d="M52,17 A17,17 0 0,1 70,35 L52,35Z" fill="#f4a261" opacity=".85"/><circle cx="17" cy="53" r="15" fill="#111" opacity=".65"/><path d="M52,52 A17,17 0 0,1 70,70 L52,70Z" fill="#1d3557" opacity=".8"/></svg>`;
+const geo = (pos) => `<div class="geo-svg geo-${pos}">${geoSVG}</div>`;
+const geoLine = '<div class="geo-line"></div>';
+
+const slideLabels = ["Title","Check-In","Internships","Why Viz?","Tableau Intro","Wide vs Long","Interface","Dim vs Meas","Chart Types","Eyes Drawn","Case Study","Hands-On","Wrap-Up"];
+let curSlide = 0;
+let state = {warmup:null,warmupShow:false,vizReveal:false,wideView:"wide",ifaceActive:null,dmPicks:{},dmChecked:false,chartSel:0,eyeStep:0,pieVote:null,handsStep:-1};
+
+function renderDots() {
+  const el = document.getElementById("navDots");
+  el.innerHTML = slideLabels.map((l,i) => {
+    const active = i===curSlide, past = i<curSlide;
+    const w = active ? "auto" : "10px";
+    const bg = active ? "var(--red)" : past ? "var(--navy)" : "#ccc";
+    const pad = active ? "0 10px" : "0";
+    return `<button class="nav-dot" style="width:${w};background:${bg};padding:${pad}" onclick="goTo(${i})">${active?l:''}</button>`;
+  }).join('');
+}
+
+function go(dir) {
+  const next = curSlide + dir;
+  if (next >= 0 && next < slideLabels.length) { curSlide = next; render(); }
+}
+window.goTo = function(i) { curSlide = i; render(); };
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") go(1);
+  if (e.key === "ArrowLeft") go(-1);
+});
+
+function render() {
+  renderDots();
+  document.getElementById("slideCount").textContent = `${curSlide+1} / ${slideLabels.length}`;
+  document.getElementById("prevBtn").style.background = curSlide > 0 ? "var(--navy)" : "#ccc";
+  document.getElementById("prevBtn").style.cursor = curSlide > 0 ? "pointer" : "default";
+  document.getElementById("nextBtn").style.background = curSlide < slideLabels.length-1 ? "var(--red)" : "#ccc";
+  document.getElementById("nextBtn").style.cursor = curSlide < slideLabels.length-1 ? "pointer" : "default";
+  const c = document.getElementById("slideContainer");
+  const renderers = [sTitle,sWarmUp,sInternship,sWhyViz,sTableauIntro,sWideLong,sInterface,sDimMeasure,sChartTypes,sEyesDrawn,sCaseStudy,sHandsOn,sWrapUp];
+  c.innerHTML = renderers[curSlide]();
+}
+
+// ─── SLIDES ───
+function sTitle() {
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}${geo('bl')}
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center">
+      <p style="font-size:14px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Exploring Data Science with</p>
+      <div style="font-size:38px;font-weight:900;letter-spacing:4px;margin-bottom:20px">F<span style="color:var(--red)">·</span>R<span style="color:var(--cyan)">·</span>I<span style="color:var(--yellow)">·</span>E<span style="color:var(--red)">·</span>N<span style="color:var(--cyan)">·</span>D<span style="color:var(--yellow)">·</span>S</div>
+      ${geoLine}<h1 class="big">The One Where We<br>Visualize Data</h1>
+      <p class="subtitle">Week 6 — Introduction to Tableau & Chart Selection</p>
+    </div></div>`;
+}
+
+function sWarmUp() {
+  const opts = ["I've used Tableau or similar tools before","I've made charts in Excel or Google Sheets","I've seen dashboards but never built one","This is completely new to me"];
+  const colors = ["var(--teal)","var(--cyan)","var(--yellow)","var(--red)"];
+  const responses = [
+    "Great — build on what you know and challenge yourself with advanced concepts today.",
+    "Perfect foundation! Tableau supercharges chart-building with interactivity and better design.",
+    "You've seen the finished product — now you'll learn how those dashboards actually get built.",
+    "Welcome! That's exactly what this class is for. We'll take it step by step."
+  ];
+  let btns = opts.map((o,i) => {
+    const active = state.warmup === i;
+    return `<button class="poll-btn${active?' active':''}" style="${active?'background:'+colors[i]+';border-color:'+colors[i]+';color:#fff':''}" onclick="warmupPick(${i})">${o}</button>`;
+  }).join('');
+  let resp = '';
+  if (state.warmupShow) resp = `<div style="margin-top:16px;padding:16px;background:#2a9d8f12;border-radius:8px;border:1px solid #2a9d8f30"><p style="font-size:14px;line-height:1.6;color:var(--dark)">${responses[state.warmup]}</p></div>`;
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big">Quick Check-In</h1><p class="subtitle">Before we dive in — where are you starting from?</p>${geoLine}<div style="max-width:520px;margin-top:16px">${btns}${resp}</div></div>`;
+}
+window.warmupPick = function(i) { state.warmup=i; state.warmupShow=true; render(); };
+
+function sInternship() {
+  const items = [{q:"What's one thing you've learned from your internship so far that surprised you?",icon:"💡"},{q:"Have you encountered any data, reports, or dashboards at your internship?",icon:"📊"},{q:"What skills from this class have shown up in your work?",icon:"🔗"},{q:"What do you wish you knew more about going into your internship?",icon:"🤔"}];
+  let list = items.map((it,i) => `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;${i<3?'border-bottom:1px solid var(--light)':''}"><span style="font-size:22px">${it.icon}</span><p style="font-size:16px;font-weight:600;color:var(--dark);line-height:1.4">${it.q}</p></div>`).join('');
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}
+    <div style="display:flex;gap:30px;flex-wrap:wrap;align-items:center;min-height:380px">
+      <div style="flex:1;min-width:280px"><h1 class="big">Internship<br>Check-In</h1>${geoLine}<p class="subtitle">Welcome back from break! Our Director of Career Services is joining us today.</p>
+        <div style="margin-top:16px;padding:14px;background:#2a9d8f10;border-radius:8px;border:1px solid #2a9d8f25">
+          <p style="font-size:14px;color:var(--teal);font-weight:700">🎤 Special Guest</p>
+          <p style="margin-top:4px;font-size:13px;color:var(--dark)">Share what you've been learning — this is a great chance to reflect on your experience and ask questions about making the most of your internship.</p>
+        </div>
+      </div>
+      <div style="flex:1;min-width:280px">${list}
+        <div style="margin-top:16px;padding:14px;background:#1d35570c;border-radius:8px;border-left:4px solid var(--navy)">
+          <p style="font-size:13px;color:var(--navy);font-weight:600">💬 Discussion Prompt: What's been the most valuable thing you've gained from your internship so far — a skill, a connection, a perspective?</p>
+        </div></div></div></div>`;
+}
+
+function sWhyViz() {
+  const nums = [8,6,7,9,3,5,4,8,6,7,2,9,5,6,8,3,7,4,6,8,5,9,7,3];
+  const max=9;
+  const pts = nums.map((v,i) => `${8+(i/23)*280},${90-(v/max)*75}`);
+  let svg = `<svg width="100%" viewBox="0 0 300 100" style="display:block">${nums.map((v,i)=>`<circle cx="${8+(i/23)*280}" cy="${90-(v/max)*75}" r="4" fill="var(--navy)" opacity=".7"/>`).join('')}<polyline points="${pts.join(' ')}" fill="none" stroke="var(--cyan)" stroke-width="2" opacity=".5"/></svg>`;
+  const revealBtn = state.vizReveal ? '' : `<button style="margin-top:10px;padding:8px 20px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer" onclick="vizReveal()">Show Key Insight →</button>`;
+  const revealText = state.vizReveal ? `<p style="margin:10px 0 0;font-size:14px;color:var(--navy);font-weight:600;padding:10px 14px;background:#1d35570c;border-radius:6px">Visualization isn't about making data "pretty" — it's about making it <em>understandable</em>. A good chart answers a question. A great chart answers a question you didn't know to ask.</p>` : '';
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big">Why Visualize?</h1><p class="subtitle">The same data, two ways. Which tells you more, faster?</p>${geoLine}
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:12px">
+      <div style="flex:1;min-width:220;background:var(--white);border-radius:8px;padding:16px;border:1px solid var(--light)">
+        <p style="font-weight:800;font-size:13px;color:var(--gray);text-transform:uppercase;margin-bottom:8px">The Raw Numbers</p>
+        <div style="font-family:monospace;font-size:15px;line-height:1.6;color:var(--dark)">${nums.join(', ')}</div>
+        <p style="margin-top:12px;font-size:13px;color:var(--gray)">What's the trend? What's the max? Hard to tell...</p>
+      </div>
+      <div style="flex:1;min-width:280;background:var(--white);border-radius:8px;padding:16px;border:1px solid var(--light)">
+        <p style="font-weight:800;font-size:13px;color:var(--gray);text-transform:uppercase;margin-bottom:8px">The Same Data, Visualized</p>${svg}
+        <p style="margin-top:8px;font-size:13px;color:var(--teal);font-weight:600">Patterns, outliers, and trends become obvious instantly.</p>
+      </div></div>
+    <div style="margin-top:18px;padding:16px;background:#d628280c;border-radius:8px;border:2px solid #d6282825">
+      <p style="font-weight:800;font-size:15px;color:var(--red);text-transform:uppercase;margin-bottom:6px">🗣️ Think–Pair–Share</p>
+      <p style="font-size:14px;color:var(--dark);line-height:1.5">Think of a chart you saw in the wild — at work, in news, on social media. <strong>What made it effective or confusing?</strong> Share with a neighbor for 90 seconds.</p>
+      ${revealBtn}${revealText}
+    </div></div>`;
+}
+window.vizReveal = function() { state.vizReveal=true; render(); };
+
+function sTableauIntro() {
+  const features = [
+    {title:"Connect",desc:"Pull in data from Excel, CSV, SQL databases, Google Sheets, cloud services — nearly any source.",icon:"🔌",color:"var(--cyan)"},
+    {title:"Visualize",desc:"Drag and drop fields to create bar charts, line charts, scatter plots, maps, heat maps, and more.",icon:"📊",color:"var(--teal)"},
+    {title:"Dashboard",desc:"Combine multiple charts into one interactive view. Add filters so people can explore the data.",icon:"🖥️",color:"var(--navy)"},
+    {title:"Calculate",desc:"Create new fields with formulas — ratios, categories, running totals — without changing source data.",icon:"🧮",color:"var(--purple)"},
+    {title:"Analyze",desc:"Add trend lines, forecasts, clusters, and reference lines to surface deeper patterns.",icon:"🔍",color:"var(--orange)"}
+  ];
+  let boxes = features.map((f,i) => `<div class="reveal-box" id="rb${i}"><button class="reveal-btn" onclick="toggleReveal(${i})" style="font-size:14px">${f.icon}  ${f.title} <span id="rbicon${i}">+</span></button><div class="reveal-content" id="rbc${i}">${f.desc}</div></div>`).join('');
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big">What is Tableau?</h1><p class="subtitle">A drag-and-drop tool that turns data into interactive visualizations — no coding required.</p>${geoLine}
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px">${boxes}</div>
+    <div style="margin-top:14px;padding:14px;background:#f4a26120;border-radius:8px;border:1px solid #f4a26140">
+      <p style="font-size:13px;color:var(--dark)">🎓 <strong>Student perk:</strong> Tableau Desktop is free for students for one full year — the same tool used by analysts at major companies.</p>
+    </div>
+    <div style="margin-top:10px;padding:14px;background:#d628280c;border-radius:8px;border:1px solid #d6282825">
+      <p style="font-size:13px;color:var(--dark)">💰 <strong>Important context:</strong> Tableau is <em>not</em> open source. Professional licenses start at <strong>$75/month per user</strong> — organizations need significant budget to support it. This is why Tableau skills are so valuable on a résumé.</p>
+    </div></div>`;
+}
+window.toggleReveal = function(i) {
+  const el = document.getElementById('rb'+i);
+  el.classList.toggle('open');
+  document.getElementById('rbicon'+i).textContent = el.classList.contains('open') ? '−' : '+';
+};
+
+function sWideLong() {
+  const v = state.wideView;
+  const wBtn = `<button style="padding:10px 24px;border-radius:8px;border:2px solid ${v==='wide'?'var(--navy)':'#ddd'};background:${v==='wide'?'var(--navy)':'var(--white)'};color:${v==='wide'?'#fff':'var(--dark)'};font-weight:800;font-size:14px;cursor:pointer;text-transform:uppercase" onclick="setWide('wide')">📐 Wide Format</button>`;
+  const lBtn = `<button style="padding:10px 24px;border-radius:8px;border:2px solid ${v==='long'?'var(--navy)':'#ddd'};background:${v==='long'?'var(--navy)':'var(--white)'};color:${v==='long'?'#fff':'var(--dark)'};font-weight:800;font-size:14px;cursor:pointer;text-transform:uppercase" onclick="setWide('long')">📏 Long (Tidy) Format</button>`;
+  let table = '';
+  if (v==='wide') {
+    table = '<table><thead><tr style="background:var(--navy);color:#fff"><th>Drink</th><th>Q1 Sales</th><th>Q2 Sales</th><th>Q3 Sales</th><th>Q4 Sales</th></tr></thead><tbody>';
+    [["Espresso","$12,400","$14,200","$13,800","$15,100"],["Latte","$18,600","$16,900","$19,200","$21,000"],["Drip","$8,200","$7,800","$8,500","$9,100"]].forEach((r,i)=>{
+      table+=`<tr style="background:${i%2===0?'var(--off)':'var(--white)'}">`;
+      r.forEach((c,j)=>table+=`<td style="font-weight:${j===0?700:400}">${c}</td>`);
+      table+='</tr>';
+    });
+    table+='</tbody></table>';
+  } else {
+    table='<table><thead><tr style="background:var(--teal);color:#fff"><th>Drink</th><th>Quarter</th><th>Sales</th></tr></thead><tbody>';
+    [["Espresso","Q1","$12,400"],["Espresso","Q2","$14,200"],["Espresso","Q3","$13,800"],["Espresso","Q4","$15,100"],["Latte","Q1","$18,600"],["Latte","Q2","$16,900"],["Latte","Q3","$19,200"],["Latte","Q4","$21,000"],["Drip","Q1","$8,200"],["Drip","Q2","$7,800"],["Drip","Q3","$8,500"],["Drip","Q4","$9,100"]].forEach((r,i)=>{
+      table+=`<tr style="background:${i%2===0?'var(--off)':'var(--white)'}">`;
+      r.forEach((c,j)=>table+=`<td style="font-weight:${j===0?600:400}">${c}</td>`);
+      table+='</tr>';
+    });
+    table+='</tbody></table>';
+  }
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big">Wide vs. Long Data</h1><p class="subtitle">Tableau prefers "long" (tidy) data. Toggle to see the difference.</p>${geoLine}
+    <div style="display:flex;gap:10px;margin-bottom:16px">${wBtn}${lBtn}</div>
+    <div style="background:var(--white);border-radius:8px;padding:2px;border:1px solid var(--light);overflow-x:auto">${table}</div>
+    <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200;padding:12px;border-radius:8px;background:${v==='wide'?'#1d355712':'#1d355706'};border:1px solid ${v==='wide'?'#1d355730':'transparent'}">
+        <p style="font-weight:700;font-size:13px;color:var(--navy)">📐 Wide</p>
+        <p style="margin-top:4px;font-size:13px;color:var(--dark)">Easy for humans. Each row = one item, columns = time periods. Hard for tools to analyze.</p>
+      </div>
+      <div style="flex:1;min-width:200;padding:12px;border-radius:8px;background:${v==='long'?'#2a9d8f12':'#2a9d8f06'};border:1px solid ${v==='long'?'#2a9d8f30':'transparent'}">
+        <p style="font-weight:700;font-size:13px;color:var(--teal)">📏 Long (Tidy)</p>
+        <p style="margin-top:4px;font-size:13px;color:var(--dark)">Each row = one observation. What Tableau needs. One column per variable, one row per data point.</p>
+      </div></div>
+    <div style="margin-top:12px;padding:12px;background:#f4a26120;border-radius:8px"><p style="font-size:13px;color:var(--dark)">📖 <strong>This week's reading:</strong> "Pivot Data in Tableau" teaches you how to reshape wide data into long format directly inside Tableau.</p></div></div>`;
+}
+window.setWide = function(v) { state.wideView=v; render(); };
+
+function sInterface() {
+  const areas = [
+    {name:"Data Pane",desc:"Your ingredient list. Blue fields = Dimensions (categorical). Green = Measures (numerical).",color:"var(--purple)"},
+    {name:"Shelves (Columns & Rows)",desc:"Drag fields here to build your chart. Columns = x-axis, Rows = y-axis.",color:"var(--cyan)"},
+    {name:"Marks Card",desc:"Control how marks look: Color, Size, Label, Detail, Tooltip. Add visual depth here.",color:"var(--yellow)"},
+    {name:"Canvas",desc:"Your chart renders here in real-time. Every drag-and-drop updates it instantly.",color:"var(--teal)"},
+    {name:"Show Me",desc:"Chart type selector. Highlights which charts work with your current fields.",color:"var(--orange)"},
+    {name:"Filters",desc:"Narrow your data. Show Filter to add interactive controls for your audience.",color:"var(--red)"}
+  ];
+  let btns = areas.map((a,i) => {
+    const active = state.ifaceActive===i;
+    return `<button style="padding:10px 16px;border-radius:8px;border:2px solid ${active?a.color:'#ddd'};background:${active?a.color:'var(--white)'};color:${active?'#fff':'var(--dark)'};font-weight:800;font-size:14px;cursor:pointer;transition:all .2s" onclick="ifacePick(${i})">${a.name}</button>`;
+  }).join(' ');
+  let detail = '';
+  if (state.ifaceActive !== null) {
+    const a = areas[state.ifaceActive];
+    detail = `<div style="margin-top:14px;padding:18px;background:var(--white);border-radius:8px;border:2px solid ${a.color}"><h4 style="margin:0 0 6px;color:${a.color};font-size:18px;font-weight:900;text-transform:uppercase">${a.name}</h4><p style="font-size:15px;line-height:1.6;color:var(--dark)">${a.desc}</p></div>`;
+  }
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big">The Tableau Workspace</h1><p class="subtitle">Click each area to learn what it does — then you'll explore hands-on.</p>${geoLine}
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">${btns}</div>${detail}
+    <div style="margin-top:16px;padding:14px;background:#d628280c;border-radius:8px;border:2px solid #d6282825">
+      <p style="font-weight:800;font-size:14px;color:var(--red);text-transform:uppercase;margin-bottom:4px">🎯 Up Next: Hands-On</p>
+      <p style="font-size:14px;color:var(--dark)">Open Tableau and load the Superstore dataset. Spend 2 minutes dragging fields around — you can't break anything while using the test data, so experiment freely!</p>
+    </div></div>`;
+}
+window.ifacePick = function(i) { state.ifaceActive = state.ifaceActive===i?null:i; render(); };
+
+function sDimMeasure() {
+  const items = [{name:"Customer Name",ans:"dim"},{name:"Sales ($)",ans:"mea"},{name:"Region",ans:"dim"},{name:"Profit ($)",ans:"mea"},{name:"Order Date",ans:"dim"},{name:"Quantity",ans:"mea"}];
+  const score = Object.entries(state.dmPicks).filter(([i,v])=>items[i].ans===v).length;
+  let rows = items.map((it,i) => {
+    let btns = ['dim','mea'].map(t => {
+      const active = state.dmPicks[i]===t;
+      const bg = active?(state.dmChecked?(t===it.ans?'var(--teal)':'var(--red)'):(t==='dim'?'var(--navy)':'var(--teal)')):'#eee';
+      const col = active?'#fff':'var(--dark)';
+      return `<button class="dm-btn" style="background:${bg};color:${col}" onclick="dmPick(${i},'${t}')">${t==='dim'?'🔵 Dim':'🟢 Meas'}</button>`;
+    }).join(' ');
+    let mark = state.dmChecked ? `<span style="font-size:14px">${state.dmPicks[i]===it.ans?'✓':'✗'}</span>` : '';
+    return `<div class="dm-row"><span class="dm-label">${it.name}</span>${btns}${mark}</div>`;
+  }).join('');
+  let action = '';
+  if (Object.keys(state.dmPicks).length===items.length && !state.dmChecked) action = '<button style="margin-top:8px;padding:8px 24px;background:var(--red);color:#fff;border:none;border-radius:6px;font-weight:800;font-size:13px;cursor:pointer;text-transform:uppercase" onclick="dmCheck()">Check</button>';
+  if (state.dmChecked) action = `<p style="margin-top:8px;font-weight:800;font-size:16px;color:${score===6?'var(--teal)':'var(--yellow)'}">${score}/6 — ${score===6?'Perfect! 🎉':'Review the misses above.'}</p>`;
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big">Dimensions vs. Measures</h1><p class="subtitle">The most fundamental Tableau concept. Every field is one or the other.</p>${geoLine}
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px">
+      <div style="flex:0 0 auto;max-width:300px">
+        <div style="padding:14px;background:#1d355710;border-radius:8px;margin-bottom:10px;border:1px solid #1d355725"><p style="font-weight:800;color:var(--navy);font-size:14px">🔵 Dimensions</p><p style="margin-top:4px;font-size:13px;color:var(--dark)">Categorical, qualitative. For <strong>grouping and slicing</strong>. Blue pills.</p></div>
+        <div style="padding:14px;background:#2a9d8f10;border-radius:8px;border:1px solid #2a9d8f25"><p style="font-weight:800;color:var(--teal);font-size:14px">🟢 Measures</p><p style="margin-top:4px;font-size:13px;color:var(--dark)">Numerical, quantitative. For <strong>calculating</strong> (SUM, AVG). Green pills.</p></div>
+      </div>
+      <div style="flex:1;min-width:260px">
+        <p style="margin:0 0 10px;font-weight:800;font-size:14px;color:var(--dark);text-transform:uppercase">Quick Sort: Classify each field</p>
+        ${rows}${action}
+      </div></div></div>`;
+}
+window.dmPick = function(i,v) { if(!state.dmChecked){state.dmPicks[i]=v;render();} };
+window.dmCheck = function() { state.dmChecked=true; render(); };
+
+function sChartTypes() {
+  const charts = [
+    {name:"Bar Chart",icon:"📊",color:"var(--navy)",best:"Comparing categories",q:"Which category is highest?",avoid:"Too many categories (30+)",tab:"Dimension → Columns, Measure → Rows"},
+    {name:"Line Chart",icon:"📈",color:"var(--teal)",best:"Trends over time",q:"Is it going up or down?",avoid:"Non-time categorical data",tab:"Date (continuous) → Columns, Measure → Rows"},
+    {name:"Scatter Plot",icon:"🔵",color:"var(--purple)",best:"Relationships between two numbers",q:"Are these correlated?",avoid:"One axis is categorical",tab:"Measure → Columns, Measure → Rows, Dim → Detail"},
+    {name:"Pie Chart",icon:"🥧",color:"var(--red)",best:"Parts of a whole (2–5 slices)",q:"What share does each have?",avoid:"Many categories or similar sizes",tab:"Measure → Angle, Dimension → Color"},
+    {name:"Heat Map",icon:"🟧",color:"var(--orange)",best:"Patterns across two categories",q:"Which combos are high/low?",avoid:"Need for precise values",tab:"Dim → Columns, Dim → Rows, Measure → Color"},
+    {name:"Stacked Area",icon:"📐",color:"var(--cyan)",best:"Composition changing over time",q:"How do shares shift?",avoid:"Many overlapping categories",tab:"Date → Columns, Measure → Rows, Dim → Color"}
+  ];
+  const ch = charts[state.chartSel];
+  let btns = charts.map((c,i) => {
+    const active = i===state.chartSel;
+    return `<button class="chart-sel-btn${active?' active':''}" style="${active?'background:'+c.color+';border-color:'+c.color+';color:#fff':''}" onclick="chartPick(${i})">${c.icon} ${c.name}</button>`;
+  }).join('');
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big">Know Your Charts</h1><p class="subtitle">Every chart answers a different question. Click to explore.</p>${geoLine}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">${btns}</div>
+    <div style="background:var(--white);border-radius:10px;border:2px solid ${ch.color}30;overflow:hidden">
+      <div style="background:${ch.color};padding:14px 20px"><h4 style="margin:0;color:#fff;font-size:20px;font-weight:900">${ch.icon} ${ch.name}</h4></div>
+      <div style="padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+        <div class="info-box" style="background:${ch.color}08"><p style="font-weight:800;font-size:12px;color:${ch.color};text-transform:uppercase">Best For</p><p style="margin-top:4px;font-size:15px;font-weight:700;color:var(--dark)">${ch.best}</p></div>
+        <div class="info-box" style="background:#2a9d8f08"><p style="font-weight:800;font-size:12px;color:var(--teal);text-transform:uppercase">Key Question</p><p style="margin-top:4px;font-size:15px;font-weight:700;color:var(--dark);font-style:italic">"${ch.q}"</p></div>
+        <div class="info-box" style="background:#d6282808"><p style="font-weight:800;font-size:12px;color:var(--red);text-transform:uppercase">Avoid When</p><p style="margin-top:4px;font-size:14px;color:var(--dark)">${ch.avoid}</p></div>
+        <div class="info-box" style="background:#1d355708"><p style="font-weight:800;font-size:12px;color:var(--navy);text-transform:uppercase">In Tableau</p><p style="margin-top:4px;font-size:13px;color:var(--dark);font-family:monospace">${ch.tab}</p></div>
+      </div></div></div>`;
+}
+window.chartPick = function(i) { state.chartSel=i; render(); };
+
+function sEyesDrawn() {
+  const steps = [
+    {label:"Step 1: Glance at your chart for 3 seconds",detail:"Where do your eyes go first? That's what your audience will notice."},
+    {label:"Step 2: Is that the key insight?",detail:"If your eyes went to a legend, gridline, or decoration — that's a problem."},
+    {label:"Step 3: Redesign to guide the eye",detail:"Use color, size, position, and labels to make the insight unmissable."}
+  ];
+  let stepBtns = steps.map((s,i) => {
+    const active = state.eyeStep===i;
+    return `<button class="step-btn${active?' active':''}" onclick="eyeStep(${i})"><p style="font-weight:800;font-size:14px;color:${active?'var(--red)':'var(--dark)'}">${s.label}</p><div class="step-detail">${s.detail}</div></button>`;
+  }).join('');
+  const principles = [
+    {p:"White Space",d:"Give elements room to breathe. Clutter kills comprehension.",c:"var(--navy)"},
+    {p:"Color with Purpose",d:"Highlight what matters — gray out everything else.",c:"var(--teal)"},
+    {p:"Colorblind-Friendly",d:"~8% of men are colorblind. Use shapes and labels alongside color.",c:"var(--orange)"},
+    {p:"Simplify",d:"Remove gridlines, borders, 3D effects. If it doesn't help understanding, remove it.",c:"var(--red)"}
+  ];
+  let princList = principles.map((p,i) => `<div style="padding:8px 0;${i<3?'border-bottom:1px solid var(--light)':''}"><p style="font-weight:800;font-size:13px;color:${p.c}">${p.p}</p><p style="margin-top:2px;font-size:12px;color:var(--dark);line-height:1.4">${p.d}</p></div>`).join('');
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big">The "Eyes Drawn" Test</h1><p class="subtitle">The first thing your audience sees should be the most important thing.</p>${geoLine}
+    <div style="margin-bottom:14px;padding:12px;background:var(--white);border-radius:8px;border:1px solid var(--light);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:15px;font-weight:800;color:var(--navy)">📺 Watch First:</span>
+      <a href="https://youtu.be/CXpPUIoQFo0?list=PLwEff2aXpeWu44ZMHjYKffYCSvSjv9Rne" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--red);color:#fff;border-radius:6px;font-size:13px;font-weight:700;text-decoration:none">▶ "Where Are Your Eyes Drawn?" — SWD</a>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div style="flex:1;min-width:260px"><p style="font-size:15px;line-height:1.6;color:var(--dark);margin-bottom:14px">Your eyes go to the <strong>biggest, brightest, or most different</strong> thing first. Good design uses this intentionally.</p>${stepBtns}</div>
+      <div style="flex:1;min-width:260px"><div style="background:var(--white);border-radius:8px;padding:16px;border:1px solid var(--light)"><p style="font-weight:800;font-size:13px;color:var(--gray);text-transform:uppercase;margin-bottom:10px">Design Principles Cheat Sheet</p>${princList}</div></div>
+    </div></div>`;
+}
+window.eyeStep = function(i) { state.eyeStep=i; render(); };
+
+function sCaseStudy() {
+  const opts = [{l:"Always bad — ban them!",v:"bad"},{l:"Sometimes useful",v:"sometimes"},{l:"Good when used correctly",v:"good"},{l:"I love pie (food and chart)",v:"love"}];
+  let btns = opts.map(o => {
+    const active = state.pieVote===o.v;
+    return `<button style="padding:10px 16px;border-radius:8px;border:2px solid ${active?'var(--red)':'#ddd'};background:${active?'var(--red)':'var(--white)'};color:${active?'#fff':'var(--dark)'};font-weight:700;font-size:13px;cursor:pointer" onclick="pieVote('${o.v}')">${o.l}</button>`;
+  }).join(' ');
+  let resp = state.pieVote ? `<p style="margin:12px 0 0;font-size:14px;color:var(--navy);font-weight:600;padding:10px 14px;background:#1d35570c;border-radius:6px">The answer is nuanced. Pie charts work with 2–5 categories emphasizing part-to-whole. They fail with many similar-sized slices. This week you'll explore that line with your own data makeover.</p>` : '';
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px"><span style="font-size:36px;font-family:cursive;color:var(--dark)">Case Study</span></div>
+    <h1 class="big"><span class="red">Sometimes You Should</span><br>Stick to Pie</h1>${geoLine}
+    <p style="font-size:15px;line-height:1.6;color:var(--dark);max-width:600px">Data viz "rules" say pie charts are bad. But sometimes they're exactly right. This case study explores when breaking the "rules" serves your audience better.</p>
+    <div style="margin-top:16px;padding:16px;background:#d628280c;border-radius:8px;border:2px solid #d6282825">
+      <p style="font-weight:800;font-size:14px;color:var(--red);text-transform:uppercase;margin-bottom:10px">🗳️ Quick Vote</p>
+      <p style="margin-bottom:12px;font-size:14px;color:var(--dark);font-weight:600">Are pie charts good or bad for data visualization?</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">${btns}</div>${resp}
+    </div>
+    <div style="margin-top:14px;padding:14px;background:#f4a26120;border-radius:8px">
+      <p style="margin:0 0 8px;font-size:13px;color:var(--dark)">🎬 <strong>Friends connection:</strong> Remember Rachel's English trifle? Sometimes layering things together makes it worse. Same goes for chart types — the wrong one makes good data indigestible.</p>
+      <a href="https://youtube.com/watch?v=ky3KiiUK_D0&feature=youtu.be" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--red);color:#fff;border-radius:6px;font-size:13px;font-weight:700;text-decoration:none">▶ Watch the Trifle Scene</a>
+    </div></div>`;
+}
+window.pieVote = function(v) { state.pieVote=v; render(); };
+
+function sHandsOn() {
+  const steps = [
+    {t:"1. Open Superstore",d:"Launch Tableau → Superstore under Accelerators. Explore sample dashboards first!",time:"5 min"},
+    {t:"2. Bar Chart: Sales by Category",d:"Category → Columns, Sales → Rows. Add Sub-Category to Color. Sort descending.",time:"10 min"},
+    {t:"3. Line Chart: Sales Over Time",d:"Order Date → Columns (continuous), Sales → Rows. Region → Color. Add Average Line from Analytics.",time:"10 min"},
+    {t:"4. Scatter Plot: Profit vs. Sales",d:"Sales → Columns, Profit → Rows, Category → Color. Add trend line. What do you see?",time:"10 min"},
+    {t:"5. AI Coach Break",d:"Screenshot your scatter plot → paste into AI with coaching prompt. Apply one suggestion.",time:"5 min"},
+    {t:"6. Dashboard Challenge",d:"New Dashboard → drag in 2+ charts. Add a filter that updates all views. Name your sheets!",time:"10 min"}
+  ];
+  let list = steps.map((s,i) => {
+    const active = state.handsStep===i;
+    return `<div class="hands-step${active?' active':''}" onclick="handsStep(${i})">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:800;font-size:15px;color:${active?'var(--navy)':'var(--dark)'}">${s.t}</span><span style="font-size:12px;font-weight:700;color:var(--gray);background:var(--light);padding:2px 8px;border-radius:10px">${s.time}</span></div>
+      <div class="detail">${s.d}</div></div>`;
+  }).join('');
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big"><span class="red">Hands-On</span> Time</h1><p class="subtitle">Open Tableau — time to build. Follow at your own pace.</p>${geoLine}
+    <div style="display:flex;flex-direction:column;gap:0;margin-top:8px">${list}</div></div>`;
+}
+window.handsStep = function(i) { state.handsStep = state.handsStep===i?-1:i; render(); };
+
+function sWrapUp() {
+  const takeaways = ["Tableau is drag-and-drop — no coding required","Every field is a Dimension (blue) or Measure (green)","Choose charts based on the question you're answering","Good viz = simplify, guide the eye, tell the story","Pie charts: sometimes yes, often no"];
+  const assignments = ["Submit Case Study 4 (by March 8!)","Read: Pivot Data in Tableau","Read: Simple Steps for Better Design","Read: 5 Tips for Colorblind-Friendly Viz","Read: White Space","Complete Case Study 5 (Option 1 or 2)"];
+  let tkList = takeaways.map(t => `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px"><span style="color:var(--red);font-weight:900;font-size:16px">→</span><p style="font-size:14px;color:var(--dark);line-height:1.4">${t}</p></div>`).join('');
+  let asList = assignments.map((a,i) => `<div style="padding:6px 0;border-bottom:${i<5?'1px solid var(--light)':'none'};font-size:13px;color:var(--dark)">${i===0?'<strong>'+a+'</strong>':a}</div>`).join('');
+  return `<div class="slide" style="background:var(--off)">${geo('tr')}<h1 class="big">Week 6 Wrap-Up</h1><p class="subtitle">What to remember, what's due, and what's next.</p>${geoLine}
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px">
+      <div style="flex:1;min-width:260px">
+        <h4 style="margin:0 0 10px;font-weight:900;font-size:15px;color:var(--navy);text-transform:uppercase">Key Takeaways</h4>${tkList}
+      </div>
+      <div style="flex:1;min-width:260px">
+        <h4 style="margin:0 0 10px;font-weight:900;font-size:15px;color:var(--red);text-transform:uppercase">📝 Due Sunday @ Midnight</h4>
+        <div style="background:var(--white);border-radius:8px;padding:14px;border:1px solid var(--light);margin-bottom:12px">${asList}</div>
+        <div style="padding:14px;background:#2a9d8f10;border-radius:8px;border:1px solid #2a9d8f25">
+          <p style="font-weight:800;font-size:13px;color:var(--teal);text-transform:uppercase;margin-bottom:4px">🚀 Looking Ahead</p>
+          <p style="font-size:13px;color:var(--dark)">Next week: connecting Tableau to SQL databases, complex dashboards, and data storytelling.</p>
+        </div></div></div></div>`;
+}
+
+// ─── INIT ───
+render();
+</script>
+</body>
+</html>

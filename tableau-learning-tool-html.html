@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 6: Tableau Navigator & Chart Chooser</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;padding:16px;max-width:960px;margin:0 auto}
+  :root{--red:#d62828;--cyan:#00b4d8;--yellow:#f4a261;--navy:#1d3557;--black:#111;--teal:#2a9d8f;--purple:#6c5ce7;--orange:#e76f51;--gray:#636e72;--dark:#2d3436;--light:#e8e8e8;--off:#f5f5f0;--white:#fff}
+  .header{position:relative;background:var(--off);border-radius:12px;padding:24px 28px;margin-bottom:20px;overflow:hidden;border:1px solid var(--light)}
+  .header h1{font-size:24px;font-weight:900;color:var(--black);text-transform:uppercase;letter-spacing:-0.5px}
+  .header p{color:var(--gray);font-size:14px;margin-top:4px}
+  .geo{position:absolute;top:0;right:0;width:70px;height:70px;overflow:hidden;pointer-events:none}
+  .tabs{display:flex;gap:0;border-bottom:2px solid var(--light);margin-bottom:18px;overflow-x:auto;justify-content:center;background:var(--white);border-radius:8px 8px 0 0}
+  .tab-btn{padding:10px 16px;border:none;border-bottom:3px solid transparent;background:transparent;color:var(--gray);font-weight:600;font-size:13px;cursor:pointer;text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+  .tab-btn.active{border-bottom-color:var(--red);background:var(--white);color:var(--black);font-weight:800}
+  .tab-content{display:none;min-height:420px}
+  .tab-content.active{display:block}
+  .section-title{text-align:center;margin-bottom:14px}
+  .section-title h3{font-weight:900;text-transform:uppercase;font-size:18px;color:var(--black);margin-bottom:4px}
+  .section-title p{color:var(--gray);font-size:13px}
+  .info-card{background:var(--white);border-radius:8px;overflow:hidden;margin-bottom:10px}
+  .info-card-header{padding:6px 12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+  .info-card-body{padding:10px 12px;font-size:13px;line-height:1.5;color:var(--dark)}
+  .pill-btn{padding:6px 0;border-radius:20px;font-size:12px;font-weight:700;border:none;cursor:pointer;flex:1;text-align:center;transition:all .2s}
+  .check-btn{padding:10px 32px;background:var(--red);color:var(--white);border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;text-transform:uppercase}
+  .retry-btn{margin-top:8px;padding:8px 24px;background:var(--navy);color:var(--white);border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
+  .chart-type-btn{padding:8px 14px;border-radius:8px;border:2px solid #ddd;background:var(--white);color:var(--dark);font-weight:800;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin:0 4px 8px}
+  .chart-type-btn.active{color:var(--white)}
+  .quiz-option{padding:11px 14px;border-radius:8px;border:2px solid #ddd;background:var(--white);color:var(--dark);font-weight:700;font-size:13px;cursor:pointer;text-align:center;transition:all .2s;width:100%}
+  .progress-dots{display:flex;gap:6px;justify-content:center;margin:10px 0}
+  .progress-dot{width:10px;height:10px;border-radius:50%;transition:all .3s}
+  .footer{text-align:center;margin-top:28px;padding:14px 0;border-top:2px solid var(--light);display:flex;align-items:center;justify-content:center;gap:8px}
+  .footer span{font-size:12px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:1px}
+  .friends-logo{font-size:14px;font-weight:900;letter-spacing:2px}
+  /* Workspace diagram */
+  .ws-container{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .ws-diagram{position:relative;width:100%;max-width:600px;aspect-ratio:16/10;background:#1b3a5c;border-radius:8px;overflow:hidden;border:2px solid #14304d}
+  .ws-area{position:absolute;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;padding:2px;text-align:center;transition:all .25s;border:2px solid rgba(255,255,255,.18);color:rgba(255,255,255,.45);background:transparent}
+  .ws-area.discovered{border-color:var(--area-color);color:var(--area-color)}
+  .ws-area.selected{background:var(--area-color);border-color:var(--area-color);color:#fff;z-index:10;box-shadow:0 0 0 2px var(--area-color),0 2px 8px rgba(0,0,0,.3)}
+  .ws-info{flex:1;min-width:240;max-width:330px}
+  .ws-info-panel{background:var(--white);border-radius:8px;border:1px solid var(--light);overflow:hidden}
+  .ws-info-header{background:var(--navy);padding:10px 16px}
+  .ws-info-header h4{margin:0;color:#fff;font-size:15px;font-weight:800;text-transform:uppercase}
+  .ws-placeholder{background:var(--off);border-radius:8px;padding:24px;text-align:center;border:2px dashed #ddd}
+  /* Grid layouts */
+  .grid-2col{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;max-width:860px;margin:0 auto}
+  .card{background:var(--white);border-radius:8px;padding:12px;border:2px solid #e0e0e0;transition:border-color .3s}
+  .card-name{font-weight:700;font-size:14px;margin-bottom:8px;color:var(--black)}
+  .btn-row{display:flex;gap:8px}
+  .result-text{margin-top:6px;font-size:11px;font-weight:600}
+  .center{text-align:center}
+  .mt16{margin-top:16px}
+  /* Chart catalog */
+  .chart-detail{max-width:740px;margin:0 auto;background:var(--white);border-radius:10px;overflow:hidden}
+  .chart-detail-header{padding:14px 20px;display:flex;align-items:center;gap:10px}
+  .chart-detail-header h4{margin:0;color:#fff;font-size:18px;font-weight:900;text-transform:uppercase}
+  .chart-detail-header p{margin:2px 0 0;color:rgba(255,255,255,.85);font-size:13px;font-weight:600}
+  .chart-detail-body{display:flex;flex-wrap:wrap;gap:16px;padding:18px}
+  .chart-preview{flex:0 0 auto;background:var(--off);border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:center;min-width:200px}
+  .chart-info{flex:1;min-width:260px}
+  .chart-question{font-size:13px;color:var(--dark);padding:3px 0 3px 14px;position:relative;line-height:1.4}
+  .chart-question::before{content:"→";position:absolute;left:0;font-weight:800}
+  /* Quiz */
+  .quiz-card{max-width:600px;margin:0 auto;background:var(--white);border-radius:10px;border:1px solid var(--light);overflow:hidden}
+  .quiz-scenario{padding:14px 18px;background:var(--off);border-bottom:1px solid var(--light)}
+  .quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px}
+  .quiz-explain{margin:12px 14px 14px;padding:14px;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="header">
+  <svg class="geo" width="70" height="70" viewBox="0 0 70 70"><circle cx="17" cy="17" r="15" fill="#d62828" opacity=".8"/><path d="M35,0 A17,17 0 0,1 52,17 L35,17Z" fill="#00b4d8" opacity=".8"/><path d="M52,17 A17,17 0 0,1 70,35 L52,35Z" fill="#f4a261" opacity=".85"/><circle cx="17" cy="53" r="15" fill="#111" opacity=".65"/><path d="M52,52 A17,17 0 0,1 70,70 L52,70Z" fill="#1d3557" opacity=".8"/></svg>
+  <h1>The One Where We Visualize Data</h1>
+  <p>Tableau Basics & Chart Selection — Interactive Learning Guide</p>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div id="tab-contents"></div>
+
+<div class="footer">
+  <span>Exploring Data Science with</span>
+  <span class="friends-logo">F<span style="color:#d62828">·</span>R<span style="color:#00b4d8">·</span>I<span style="color:#f4a261">·</span>E<span style="color:#d62828">·</span>N<span style="color:#00b4d8">·</span>D<span style="color:#f4a261">·</span>S</span>
+</div>
+
+<script>
+// ─── DATA ───
+const workspaceAreas = [
+  {id:"toolbar",label:"Toolbar",desc:"Quick access to undo/redo, save, swap rows & columns, sort, fit options, and Show Me. Most have keyboard shortcuts too.",tip:"The Swap button (↔) instantly flips Rows and Columns — turns a vertical bar chart horizontal in one click.",ex:"Click the sort icons to quickly sort a bar chart ascending or descending.",color:"#f4a261"},
+  {id:"datapane",label:"Data Pane",desc:"Lists all fields from your dataset. Dimensions (categorical) appear at the top in blue. Measures (numerical) appear below in green.",tip:"Blue = Dimensions (grouping). Green = Measures (math). This color coding appears everywhere in Tableau.",ex:"'Category' and 'Region' are blue Dimensions. 'Sales' and 'Profit' are green Measures.",color:"#6c5ce7"},
+  {id:"analytics",label:"Analytics Pane",desc:"Switch to this tab to drag trend lines, reference lines, averages, forecasts, and clusters onto your visualization.",tip:"Click the 'Analytics' tab next to 'Data' to find it. Drag an Average Line onto a chart to compare values to the mean.",ex:"Drag 'Trend Line' onto a scatter plot to reveal the direction of a relationship.",color:"#2a9d8f"},
+  {id:"pages",label:"Pages Shelf",desc:"Animate your visualization by stepping through values of a field — like a flipbook for your data.",tip:"Drag a date field here to watch your chart animate through time. Great for presentations!",ex:"Drag 'Year' to Pages and use playback controls to animate year by year.",color:"#8e7cc3"},
+  {id:"filters",label:"Filters Shelf",desc:"Controls which data appears in your view. Drag any field here to filter by values, ranges, or conditions.",tip:"Right-click a filter → 'Show Filter' to add an interactive dropdown or slider. This is how you make dashboards interactive!",ex:"Drag 'Region' to Filters → select only 'East' and 'West' to hide other regions.",color:"#d62828"},
+  {id:"columns",label:"Columns Shelf",desc:"Fields here define horizontal structure. Dimensions create column headers; Measures create axes. This is your x-axis.",tip:"Green pills (continuous) create axes. Blue pills (discrete) create headers. Right-click a date pill to switch!",ex:"Drag 'Category' here to create columns: Furniture, Office Supplies, Technology.",color:"#457b9d"},
+  {id:"rows",label:"Rows Shelf",desc:"Fields here define vertical structure — your y-axis. Measures create the values shown by bar heights, line positions, etc.",tip:"Put multiple fields on Rows to create small multiples — separate mini-charts stacked vertically.",ex:"Drag 'SUM(Sales)' here with Category on Columns to build a bar chart.",color:"#2a9d8f"},
+  {id:"marks",label:"Marks Card",desc:"Your visual control center. Sets the mark type (bar, line, circle) and encodes data with Color, Size, Label, Detail, Tooltip.",tip:"The dropdown sets chart type. Color, Size, and Label add extra data dimensions without additional axes.",ex:"Drag 'Region' to Color → each region gets a color. Drag 'Sales' to Label → values appear on bars.",color:"#f4a261"},
+  {id:"canvas",label:"View / Canvas",desc:"The main area where your chart renders. Updates in real time as you adjust shelves and marks.",tip:"Drag fields directly onto the canvas — Tableau guesses placement. Right-click marks for 'View Data' to see underlying rows.",ex:"Your bar chart, line chart, heat map, or scatter plot renders right here.",color:"#00b4d8"},
+  {id:"showme",label:"Show Me",desc:"A panel of 24 chart types. Highlights which ones work with your current fields. Click to switch chart type instantly.",tip:"Hover over greyed-out charts to see requirements. It's like a chart recommendation engine!",ex:"With Category and Sales selected, bar charts and pie charts will highlight as options.",color:"#e76f51"},
+  {id:"sheettabs",label:"Sheet Tabs",desc:"Each tab is a separate worksheet, dashboard, or story. Click icons at bottom to add new ones.",tip:"Name sheets descriptively ('Sales by Region' not 'Sheet 1'). The name becomes the default chart title in dashboards!",ex:"Tabs for 'Bar Chart', 'Line Trend', 'Scatter Plot', and 'Dashboard 1'.",color:"#457b9d"},
+  {id:"statusbar",label:"Status Bar",desc:"Shows mark count, rows, columns for the current view. Select marks to see quick SUM, AVG, COUNT aggregations.",tip:"Select a group of bars and the status bar instantly shows aggregations — no calculated field needed!",ex:"Select 3 bars → status shows: '3 marks, SUM: $452,891, AVG: $150,964'.",color:"#636e72"}
+];
+
+const dimMeasureItems = [
+  {name:"Customer Name",correct:"dim",hint:"Text — used to group"},{name:"Sales ($)",correct:"mea",hint:"Numerical — can be summed"},
+  {name:"Region",correct:"dim",hint:"Categorical — East, West, etc."},{name:"Profit ($)",correct:"mea",hint:"Numerical — can be averaged"},
+  {name:"Order Date",correct:"dim",hint:"Used to group by time period"},{name:"Quantity",correct:"mea",hint:"Numerical — can be counted"},
+  {name:"Category",correct:"dim",hint:"Text — Technology, Furniture"},{name:"Discount (%)",correct:"mea",hint:"Numerical — a percentage"},
+  {name:"Ship Mode",correct:"dim",hint:"Categorical — Standard, Express"},{name:"Row ID",correct:"dim",hint:"Identifier — not for math"}
+];
+
+const contDiscItems = [
+  {name:"Order Date by Year (2019, 2020, 2021)",correct:"discrete",hint:"Treated as separate categories"},
+  {name:"Sales over time (Jan 2019 → Dec 2021)",correct:"continuous",hint:"Flows as a timeline"},
+  {name:"Quarter (Q1, Q2, Q3, Q4)",correct:"discrete",hint:"Separate time buckets"},
+  {name:"Daily temperature Jan 1 – Dec 31",correct:"continuous",hint:"Smooth progression"},
+  {name:"Month of Year (Jan, Feb, Mar...)",correct:"discrete",hint:"Individual categories to compare"},
+  {name:"Revenue trend 2018–2023",correct:"continuous",hint:"Shows pattern over flowing time"}
+];
+
+const chartTypes = [
+  {name:"Bar Chart",icon:"📊",color:"#1d3557",best:"Comparing values across categories",questions:["Which category has the highest/lowest value?","How do groups compare?","What's the ranking?"],when:"Categorical data on one axis, numerical on the other. The default for most comparisons.",avoid:"Too many categories (30+). Use horizontal bars for long names.",tableau:"Dimension → Columns, Measure → Rows. Sort descending for rankings.",vizType:"bar"},
+  {name:"Line Chart",icon:"📈",color:"#2a9d8f",best:"Showing trends and changes over time",questions:["Is the value increasing or decreasing?","Are there seasonal patterns?","When did a change happen?"],when:"Continuous time dimension with a measure. The connected line emphasizes direction and rate.",avoid:"Comparing categories side-by-side. Very few data points.",tableau:"Date (continuous) → Columns, Measure → Rows. Dimension → Color for multiple lines.",vizType:"line"},
+  {name:"Scatter Plot",icon:"🔵",color:"#6c5ce7",best:"Revealing relationships between two numbers",questions:["Is there a correlation?","Are there outliers?","Do clusters emerge?"],when:"Two numerical measures. Each mark = one record. Add trend line for direction.",avoid:"One axis is categorical. Very few data points.",tableau:"Measure 1 → Columns, Measure 2 → Rows. Dimension → Color & Detail.",vizType:"scatter"},
+  {name:"Pie Chart",icon:"🥧",color:"#d62828",best:"Showing parts of a whole (use sparingly!)",questions:["What proportion does each category represent?","What's the dominant share?"],when:"2–5 categories that add to 100%. Best when one slice clearly dominates.",avoid:"Many categories, similar-sized slices, or when exact values matter more. Consider a bar chart.",tableau:"Mark type → Pie. Measure → Angle, Dimension → Color.",vizType:"pie"},
+  {name:"Heat Map",icon:"🟧",color:"#e76f51",best:"Spotting patterns across two categories",questions:["Which combinations have high/low values?","Are there clusters?","Where are exceptions?"],when:"Two categorical dimensions and one measure. Color intensity replaces reading numbers.",avoid:"Need precise values (add labels). One dimension has too many values.",tableau:"Dim 1 → Columns, Dim 2 → Rows, Measure → Color.",vizType:"heat"},
+  {name:"Stacked Area",icon:"📐",color:"#457b9d",best:"How composition changes over time",questions:["How does each part contribute to the total?","Is the trend up or down?","Are shares shifting?"],when:"Time trend + part-to-whole. Shows total and individual contributions.",avoid:"Many categories (hard to read middle layers). Use multiple lines if exact comparisons matter.",tableau:"Date → Columns, Measure → Rows, Dimension → Color. Mark type → Area.",vizType:"area"}
+];
+
+const quizData = [
+  {scenario:"Monica wants to compare total coffee sales across four drink categories.",question:"Which chart best compares values across categories?",options:["Bar Chart","Line Chart","Scatter Plot","Pie Chart"],correct:0,explanation:"Bar charts are the go-to for comparing values across categories. Bar length makes differences easy to spot.",dataType:"Categorical comparison",fields:"Category → Columns, SUM(Sales) → Rows"},
+  {scenario:"Ross is tracking museum visitor numbers month by month over two years.",question:"Which chart best shows trends over time?",options:["Pie Chart","Bar Chart","Line Chart","Scatter Plot"],correct:2,explanation:"Line charts show trends over continuous time. The connected line reveals patterns and turning points.",dataType:"Trend over time",fields:"Date (continuous) → Columns, SUM(Visitors) → Rows"},
+  {scenario:"Chandler's boss wants to know: is there a relationship between ad spend and revenue across 50 campaigns?",question:"Which chart reveals relationships between two numbers?",options:["Bar Chart","Pie Chart","Line Chart","Scatter Plot"],correct:3,explanation:"Scatter plots show relationships between two measures. Each dot is a campaign. Add a trend line to see the pattern!",dataType:"Relationship",fields:"Ad Spend → Columns, Revenue → Rows, Campaign → Detail"},
+  {scenario:"Rachel needs to show what percentage of revenue comes from each of four departments.",question:"Which chart shows parts of a whole (few categories)?",options:["Line Chart","Scatter Plot","Bar Chart","Pie Chart"],correct:3,explanation:"Pie charts work with a small number of categories (2–5) that add up to 100%.",dataType:"Proportion",fields:"SUM(Revenue) → Angle, Department → Color"},
+  {scenario:"Joey wants to rank the top 10 sandwiches in NYC by customer rating.",question:"Which chart is best for ranking?",options:["Scatter Plot","Sorted Bar Chart","Pie Chart","Line Chart"],correct:1,explanation:"Sorted bar charts are perfect for rankings. Highest-to-lowest ordering makes top performers clear.",dataType:"Ranking",fields:"Sandwich → Rows (sorted), AVG(Rating) → Columns"},
+  {scenario:"Phoebe wants to find which product × region combos have unusually high or low sales.",question:"Which chart spots patterns across two categories?",options:["Heat Map","Pie Chart","Line Chart","Scatter Plot"],correct:0,explanation:"Heat maps use color intensity across a grid of two dimensions. Dark = high, light = low.",dataType:"Matrix comparison",fields:"Category → Columns, Region → Rows, SUM(Sales) → Color"},
+  {scenario:"Gunther wants to show how daily revenue splits between dine-in, takeout, and delivery over 6 months.",question:"Which chart shows composition changing over time?",options:["Pie Chart","Scatter Plot","Stacked Area","Bar Chart"],correct:2,explanation:"Stacked area charts combine time trends with part-to-whole composition.",dataType:"Composition over time",fields:"Date → Columns, SUM(Revenue) → Rows, Channel → Color"},
+  {scenario:"Monica needs to compare this month's revenue against a $50K target.",question:"Simplest way to show progress toward a goal?",options:["Scatter Plot","Pie Chart","Bar + Reference Line","Heat Map"],correct:2,explanation:"A bar with a reference line is the clearest actual-vs-goal view. Add from Analytics pane.",dataType:"Actual vs. target",fields:"SUM(Revenue) → Columns, Reference Line from Analytics pane"}
+];
+
+// ─── STATE ───
+let activeTab = 0;
+let wsSelected = null, wsDiscovered = new Set();
+let dmAnswers = {}, dmChecked = false;
+let cdAnswers = {}, cdChecked = false;
+let catalogActive = 0;
+let quizCur = 0, quizSel = null, quizShow = false, quizResults = [];
+
+// ─── TAB SYSTEM ───
+const tabDefs = [
+  {label:"Workspace",icon:"🖥️"},{label:"Dim vs Measure",icon:"🔵"},{label:"Cont vs Discrete",icon:"🟢"},
+  {label:"Chart Guide",icon:"📖"},{label:"Chart Quiz",icon:"📊"}
+];
+
+function initTabs() {
+  const tabsEl = document.getElementById("tabs");
+  tabDefs.forEach((t, i) => {
+    const btn = document.createElement("button");
+    btn.className = "tab-btn" + (i === 0 ? " active" : "");
+    btn.innerHTML = `<span>${t.icon}</span> ${t.label}`;
+    btn.onclick = () => switchTab(i);
+    btn.id = "tab-btn-" + i;
+    tabsEl.appendChild(btn);
+  });
+}
+
+function switchTab(i) {
+  activeTab = i;
+  document.querySelectorAll(".tab-btn").forEach((b, j) => b.className = "tab-btn" + (j === i ? " active" : ""));
+  renderActiveTab();
+}
+
+function renderActiveTab() {
+  const c = document.getElementById("tab-contents");
+  if (activeTab === 0) renderWorkspace(c);
+  else if (activeTab === 1) renderDimMeasure(c);
+  else if (activeTab === 2) renderContDisc(c);
+  else if (activeTab === 3) renderCatalog(c);
+  else if (activeTab === 4) renderQuiz(c);
+}
+
+// ─── HELPERS ───
+function infoCard(color, icon, title, body) {
+  return `<div class="info-card" style="border:2px solid ${color}20"><div class="info-card-header" style="background:${color}12;border-bottom:1px solid ${color}20;color:${color}">${icon} ${title}</div><div class="info-card-body">${body}</div></div>`;
+}
+
+function miniBar() {
+  const data = [{l:"Furniture",v:742,c:"#264653"},{l:"Office Sup.",v:920,c:"#2a9d8f"},{l:"Technology",v:836,c:"#e9c46a"}];
+  const max = Math.max(...data.map(d=>d.v));
+  let svg = '<svg width="220" height="120"><line x1="30" y1="95" x2="215" y2="95" stroke="#ddd" stroke-width="1"/>';
+  data.forEach((d,i) => {
+    const bh = (d.v/max)*70, x = 40+i*62;
+    svg += `<rect x="${x}" y="${95-bh}" width="45" height="${bh}" fill="${d.c}" rx="3"/>`;
+    svg += `<text x="${x+22}" y="110" text-anchor="middle" font-size="8" fill="#636e72">${d.l}</text>`;
+    svg += `<text x="${x+22}" y="${88-bh}" text-anchor="middle" font-size="9" fill="#2d3436" font-weight="600">${d.v}</text>`;
+  });
+  return svg + '</svg>';
+}
+
+function miniLine() {
+  const pts = [30,45,38,52,48,65,72,68,80,75,88,95];
+  const max=95,min=30;
+  let coords = pts.map((y,i) => `${30+(i/11)*185},${95-((y-min)/(max-min))*70}`);
+  let svg = '<svg width="220" height="120"><line x1="30" y1="95" x2="215" y2="95" stroke="#ddd" stroke-width="1"/>';
+  svg += `<polyline points="${coords.join(' ')}" fill="none" stroke="#2a9d8f" stroke-width="2.5" stroke-linejoin="round"/>`;
+  pts.forEach((y,i) => { const cx=30+(i/11)*185, cy=95-((y-min)/(max-min))*70; svg+=`<circle cx="${cx}" cy="${cy}" r="3" fill="#2a9d8f"/>`; });
+  return svg + '</svg>';
+}
+
+function miniScatter() {
+  const data = [{x:20,y:15,c:0},{x:35,y:28,c:0},{x:45,y:35,c:1},{x:55,y:48,c:1},{x:25,y:22,c:0},{x:60,y:55,c:2},{x:40,y:30,c:1},{x:70,y:62,c:2},{x:30,y:18,c:0},{x:50,y:42,c:1},{x:65,y:58,c:2},{x:75,y:70,c:2}];
+  const cols = ["#1d3557","#2a9d8f","#f4a261"];
+  let svg = '<svg width="220" height="120"><line x1="30" y1="100" x2="215" y2="100" stroke="#ddd" stroke-width="1"/><line x1="30" y1="10" x2="30" y2="100" stroke="#ddd" stroke-width="1"/>';
+  data.forEach(d => { svg += `<circle cx="${30+(d.x/85)*185}" cy="${100-(d.y/75)*85}" r="5" fill="${cols[d.c]}" opacity=".7"/>`; });
+  svg += '<line x1="30" y1="95" x2="210" y2="15" stroke="#d62828" stroke-width="1.5" stroke-dasharray="4,3" opacity=".5"/>';
+  return svg + '</svg>';
+}
+
+function miniPie() {
+  const data = [{v:35,c:"#264653"},{v:30,c:"#2a9d8f"},{v:20,c:"#e9c46a"},{v:15,c:"#e76f51"}];
+  const total = data.reduce((s,d)=>s+d.v,0);
+  let svg = '<svg width="140" height="140">', angle = -Math.PI/2;
+  data.forEach(d => {
+    const a = (d.v/total)*2*Math.PI;
+    const x1=70+50*Math.cos(angle), y1=70+50*Math.sin(angle);
+    angle += a;
+    const x2=70+50*Math.cos(angle), y2=70+50*Math.sin(angle);
+    const lg = a>Math.PI?1:0;
+    const mid = angle-a/2, lx=70+64*Math.cos(mid), ly=70+64*Math.sin(mid);
+    svg += `<path d="M70,70 L${x1},${y1} A50,50 0 ${lg},1 ${x2},${y2} Z" fill="${d.c}"/>`;
+    svg += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="8" fill="#2d3436" font-weight="600">${Math.round(d.v/total*100)}%</text>`;
+  });
+  return svg + '</svg>';
+}
+
+function miniHeat() {
+  const vals = [[90,60,30,75],[45,85,55,40],[70,35,80,60],[50,65,45,90]];
+  let svg = '<svg width="200" height="120">';
+  vals.forEach((row,r) => row.forEach((v,c) => {
+    const int=v/100, red=Math.round(100+int*120), g=Math.round(180-int*140);
+    svg += `<rect x="${30+c*40}" y="${r*28}" width="38" height="26" fill="rgb(${red},${g},${Math.round(80+int*40)})" rx="2"/>`;
+    svg += `<text x="${30+c*40+19}" y="${r*28+16}" text-anchor="middle" font-size="8" fill="#fff" font-weight="600">${v}</text>`;
+  }));
+  return svg + '</svg>';
+}
+
+function miniArea() {
+  const data = [[20,15,10],[22,18,12],[25,16,15],[28,20,13],[30,22,18],[32,25,16],[35,23,20],[38,28,19]];
+  const max = Math.max(...data.map(d=>d.reduce((a,b)=>a+b,0)));
+  const cols = ["#1d3557","#2a9d8f","#f4a261"];
+  let svg = '<svg width="220" height="120"><line x1="30" y1="100" x2="215" y2="100" stroke="#ddd" stroke-width="1"/>';
+  [2,1,0].forEach(layer => {
+    let top = data.map((d,i) => {
+      const x=30+(i/7)*185, cy=d.slice(0,layer+1).reduce((a,b)=>a+b,0);
+      return `${x},${100-(cy/max)*80}`;
+    }).join(' ');
+    let bot = [...data].reverse().map((d,i) => {
+      const x=30+((7-i)/7)*185, cy=layer>0?d.slice(0,layer).reduce((a,b)=>a+b,0):0;
+      return `${x},${100-(cy/max)*80}`;
+    }).join(' ');
+    svg += `<polygon points="${top} ${bot}" fill="${cols[layer]}" opacity=".75"/>`;
+  });
+  return svg + '</svg>';
+}
+
+const vizRenderers = {bar:miniBar,line:miniLine,scatter:miniScatter,pie:miniPie,heat:miniHeat,area:miniArea};
+
+// ─── TAB 1: WORKSPACE ───
+function renderWorkspace(container) {
+  const allFound = wsDiscovered.size === workspaceAreas.length;
+  let html = `<div class="section-title"><h3>Explore the Tableau Workspace</h3><p>Click each area to learn what it does. Find all ${workspaceAreas.length}!</p>
+    <div style="font-size:13px;color:${allFound?'#2a9d8f':'#1d3557'};margin-top:4px;font-weight:700">${allFound?'🎉 All areas discovered!':`${wsDiscovered.size} / ${workspaceAreas.length} discovered`}</div></div>`;
+  html += '<div class="ws-container">';
+  // Diagram
+  html += '<div class="ws-diagram">';
+  // Title bar
+  html += '<div style="position:absolute;top:0;left:0;right:0;height:4%;background:#0d2137;display:flex;align-items:center;padding:0 8px"><span style="font-size:9px;color:#6688aa">Tableau — Book1</span></div>';
+  // Menu bar
+  html += '<div style="position:absolute;top:4%;left:0;right:0;height:3.5%;background:#eee;display:flex;align-items:center;padding:0 8px;gap:10px;border-bottom:1px solid #ccc">';
+  ["File","Data","Worksheet","Dashboard","Story","Analysis","Map","Format"].forEach(m => html += `<span style="font-size:8px;color:#555">${m}</span>`);
+  html += '</div>';
+  // Areas
+  const areaLayout = {
+    toolbar:{l:"0%",t:"7.5%",w:"100%",h:"5%"},datapane:{l:"0.5%",t:"13%",w:"21%",h:"52%"},analytics:{l:"10%",t:"13%",w:"11.5%",h:"4.5%"},
+    pages:{l:"22%",t:"13%",w:"14%",h:"5.5%"},filters:{l:"22%",t:"19.5%",w:"14%",h:"8%"},marks:{l:"22%",t:"28.5%",w:"14%",h:"36%"},
+    columns:{l:"37%",t:"13%",w:"48%",h:"5%"},rows:{l:"37%",t:"19%",w:"48%",h:"5%"},canvas:{l:"37%",t:"25%",w:"48%",h:"40%"},
+    showme:{l:"86%",t:"13%",w:"13.5%",h:"30%"},sheettabs:{l:"0.5%",t:"87%",w:"99%",h:"6.5%"},statusbar:{l:"0.5%",t:"93.5%",w:"99%",h:"6%"}
+  };
+  const areaContent = {
+    toolbar:'<span style="font-size:9px">↩ ↪ 💾 📊 ↔ &nbsp; <b>Toolbar</b></span>',
+    datapane:'<div style="text-align:left;width:100%;padding:4px 5px"><div style="font-size:9px;font-weight:800;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:2px;margin-bottom:2px">Data | Analytics</div><div style="font-size:7.5px;line-height:1.7"><div style="color:#7cb3e0">Abc Category</div><div style="color:#7cb3e0">Abc Region</div><div style="color:#7cb3e0">📅 Order Date</div><div style="border-top:1px solid rgba(255,255,255,.1);margin-top:2px;padding-top:2px;color:#7dd894"># Sales</div><div style="color:#7dd894"># Profit</div></div></div>',
+    analytics:'<span style="font-size:8px">Analytics ▸</span>',
+    pages:'<span style="font-size:9px">Pages</span>',
+    filters:'<div style="font-size:9px">Filters<div style="font-size:7px;opacity:.6;margin-top:1px">Drop field here</div></div>',
+    marks:'<div style="text-align:left;width:100%;padding:3px 5px"><div style="font-size:9px;font-weight:800;margin-bottom:2px">Marks</div><div style="font-size:7.5px;background:rgba(0,0,0,.15);border-radius:2px;padding:1px 4px;margin-bottom:3px">Automatic ▾</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;font-size:7px"><span>🎨 Color</span><span>📏 Size</span><span>🏷️ Label</span><span>📝 Detail</span><span>💬 Tooltip</span></div></div>',
+    columns:'<span style="font-size:9px;opacity:.6">Columns</span> <span style="background:#5a95c0;color:#fff;padding:1px 8px;border-radius:10px;font-size:8px">Category</span>',
+    rows:'<span style="font-size:9px;opacity:.6">Rows</span> <span style="background:#5aab73;color:#fff;padding:1px 8px;border-radius:10px;font-size:8px">SUM(Sales)</span>',
+    canvas:['#1d3557','#2a9d8f','#f4a261','#d62828','#457b9d','#1d3557','#2a9d8f'].map((c,i)=>`<div style="width:10%;height:${[65,85,45,70,55,90,40][i]}%;background:${c};border-radius:2px 2px 0 0;opacity:.75"></div>`).join(''),
+    showme:'<div style="text-align:center;font-size:8px"><div style="font-weight:800;font-size:9px;margin-bottom:3px">Show Me</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px">'+["📊","📈","🥧","⬛","🔵","📉","🗺️","💠","📋"].map(c=>`<span style="font-size:8px">${c}</span>`).join('')+'</div></div>',
+    sheettabs:'<div style="display:flex;gap:4px;align-items:center;width:100%;padding:0 8px;font-size:8px"><span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:3px 3px 0 0">Sheet 1</span><span style="background:rgba(255,255,255,.08);padding:2px 10px;border-radius:3px 3px 0 0">Sheet 2</span><span style="opacity:.4;margin-left:4px">＋</span></div>',
+    statusbar:'<div style="font-size:8px;display:flex;gap:12px;width:100%;padding:0 8px"><span>7 marks</span><span>3 rows × 1 col</span><span>SUM(Sales): $2,297,201</span></div>'
+  };
+
+  workspaceAreas.forEach(area => {
+    const ly = areaLayout[area.id];
+    const isSel = wsSelected === area.id, isDis = wsDiscovered.has(area.id);
+    let extraStyle = '';
+    if (area.id === 'toolbar') extraStyle = `background:${isSel?area.color:'#e0e0e0'};color:${isSel?'#fff':'#888'};border-radius:0;`;
+    else if (area.id === 'canvas') extraStyle = `background:${isSel?area.color+'33':'#f5f5f0'};`;
+    else if (area.id === 'sheettabs') extraStyle = `border-radius:0;background:${isSel?area.color:'#1e4060'};`;
+    else if (area.id === 'statusbar') extraStyle = `border-radius:0 0 6px 6px;background:${isSel?area.color:'#e8e8e8'};color:${isSel?'#fff':'#888'};`;
+    const cls = `ws-area${isDis?' discovered':''}${isSel?' selected':''}`;
+    const canvasWrap = area.id === 'canvas' ? 'display:flex;align-items:flex-end;justify-content:space-around;width:85%;height:80%;padding:0 8px' : '';
+    html += `<div class="${cls}" style="--area-color:${area.color};left:${ly.l};top:${ly.t};width:${ly.w};height:${ly.h};${extraStyle}" onclick="wsClick('${area.id}')">`;
+    if (area.id === 'canvas') html += `<div style="${canvasWrap}">${areaContent[area.id]}</div>`;
+    else html += areaContent[area.id];
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Info panel
+  html += '<div class="ws-info">';
+  if (wsSelected) {
+    const a = workspaceAreas.find(x=>x.id===wsSelected);
+    html += `<div class="ws-info-panel"><div class="ws-info-header"><h4>${a.label}</h4></div><div style="padding:14px">
+      <p style="margin:0 0 10px;font-size:13px;line-height:1.5;color:#2d3436">${a.desc}</p>
+      ${infoCard('#00b4d8','💡','Pro Tip',a.tip)}
+      ${infoCard('#6c5ce7','📋','Example','<em>'+a.ex+'</em>')}
+    </div></div>`;
+  } else {
+    html += '<div class="ws-placeholder"><div style="font-size:32px;margin-bottom:8px">👆</div><p style="color:#636e72;font-size:14px">Click any area in the workspace to learn what it does!</p></div>';
+  }
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+window.wsClick = function(id) {
+  wsSelected = id;
+  wsDiscovered.add(id);
+  renderActiveTab();
+};
+
+// ─── TAB 2: DIM VS MEASURE ───
+function renderDimMeasure(container) {
+  const score = Object.entries(dmAnswers).filter(([i,v])=>dimMeasureItems[i].correct===v).length;
+  const allDone = Object.keys(dmAnswers).length === dimMeasureItems.length;
+  let html = `<div class="section-title"><h3>Dimension or Measure?</h3><p><span style="color:#1d3557;font-weight:800">Dimensions (blue pills)</span> = categorical, for grouping. <span style="color:#2a9d8f;font-weight:800">Measures (green pills)</span> = numerical, for calculating.</p></div>`;
+  html += '<div class="grid-2col">';
+  dimMeasureItems.forEach((item,i) => {
+    const ans = dmAnswers[i], ok = ans === item.correct;
+    const borderColor = dmChecked ? (ok ? '#2a9d8f' : '#d62828') : (ans ? '#e8e8e8' : '#e0e0e0');
+    html += `<div class="card" style="border-color:${borderColor}"><div class="card-name">${item.name}</div><div class="btn-row">`;
+    ['dim','mea'].forEach(t => {
+      const active = ans === t;
+      const bg = active ? (t==='dim'?'#1d3557':'#2a9d8f') : '#eee';
+      const col = active ? '#fff' : '#2d3436';
+      html += `<button class="pill-btn" style="background:${bg};color:${col}" onclick="dmPick(${i},'${t}')">${t==='dim'?'🔵 Dimension':'🟢 Measure'}</button>`;
+    });
+    html += '</div>';
+    if (dmChecked) html += `<div class="result-text" style="color:${ok?'#2a9d8f':'#d62828'}">${ok?'✓ Correct!':'✗ It\'s a '+item.correct+'. '+item.hint}</div>`;
+    html += '</div>';
+  });
+  html += '</div><div class="center mt16">';
+  if (allDone && !dmChecked) html += '<button class="check-btn" onclick="dmCheck()">Check Answers</button>';
+  if (dmChecked) {
+    const col = score>=8?'#2a9d8f':score>=5?'#f4a261':'#d62828';
+    html += `<div style="font-size:20px;font-weight:800;color:${col}">${score}/${dimMeasureItems.length} ${score===10?'🎉 Perfect!':score>=8?'Great!':'Keep practicing!'}</div>`;
+    html += '<button class="retry-btn" onclick="dmRetry()">Try Again</button>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+window.dmPick = function(i, v) { if (!dmChecked) { dmAnswers[i]=v; renderActiveTab(); } };
+window.dmCheck = function() { dmChecked=true; renderActiveTab(); };
+window.dmRetry = function() { dmAnswers={}; dmChecked=false; renderActiveTab(); };
+
+// ─── TAB 3: CONT VS DISCRETE ───
+function renderContDisc(container) {
+  const score = Object.entries(cdAnswers).filter(([i,v])=>contDiscItems[i].correct===v).length;
+  const allDone = Object.keys(cdAnswers).length === contDiscItems.length;
+  let html = `<div class="section-title"><h3>Continuous or Discrete?</h3><p><span style="color:#2a9d8f;font-weight:800">Continuous (green pill)</span> = flowing timeline. <span style="color:#1d3557;font-weight:800">Discrete (blue pill)</span> = separate buckets.</p></div>`;
+  html += '<div style="max-width:560px;margin:0 auto">';
+  contDiscItems.forEach((item,i) => {
+    const ans = cdAnswers[i], ok = ans === item.correct;
+    const borderColor = cdChecked ? (ok ? '#2a9d8f' : '#d62828') : (ans ? '#e8e8e8' : '#e0e0e0');
+    html += `<div class="card" style="border-color:${borderColor};margin-bottom:10px"><div class="card-name">${item.name}</div><div class="btn-row">`;
+    ['continuous','discrete'].forEach(t => {
+      const active = ans === t;
+      const bg = active ? (t==='continuous'?'#2a9d8f':'#1d3557') : '#eee';
+      const col = active ? '#fff' : '#2d3436';
+      html += `<button class="pill-btn" style="background:${bg};color:${col}" onclick="cdPick(${i},'${t}')">${t==='continuous'?'🟢 Continuous':'🔵 Discrete'}</button>`;
+    });
+    html += '</div>';
+    if (cdChecked) html += `<div class="result-text" style="color:${ok?'#2a9d8f':'#d62828'}">${ok?'✓ Correct!':'✗ This is '+item.correct+'. '+item.hint}</div>`;
+    html += '</div>';
+  });
+  html += '</div><div class="center mt16">';
+  if (allDone && !cdChecked) html += '<button class="check-btn" onclick="cdCheck()">Check Answers</button>';
+  if (cdChecked) {
+    const col = score>=5?'#2a9d8f':score>=3?'#f4a261':'#d62828';
+    html += `<div style="font-size:20px;font-weight:800;color:${col}">${score}/${contDiscItems.length} ${score===contDiscItems.length?'🎉 Nailed it!':'Keep practicing!'}</div>`;
+    html += '<button class="retry-btn" onclick="cdRetry()">Try Again</button>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+window.cdPick = function(i, v) { if (!cdChecked) { cdAnswers[i]=v; renderActiveTab(); } };
+window.cdCheck = function() { cdChecked=true; renderActiveTab(); };
+window.cdRetry = function() { cdAnswers={}; cdChecked=false; renderActiveTab(); };
+
+// ─── TAB 4: CHART CATALOG ───
+function renderCatalog(container) {
+  const ch = chartTypes[catalogActive];
+  let html = `<div class="section-title"><h3>Chart Type Guide</h3><p>Click a chart type to explore when and how to use it.</p></div>`;
+  html += '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px">';
+  chartTypes.forEach((ct,i) => {
+    const active = i === catalogActive;
+    html += `<button class="chart-type-btn${active?' active':''}" style="${active?'background:'+ct.color+';border-color:'+ct.color+';color:#fff':''}" onclick="catPick(${i})">${ct.icon} ${ct.name}</button>`;
+  });
+  html += '</div>';
+  html += `<div class="chart-detail" style="border:2px solid ${ch.color}25">`;
+  html += `<div class="chart-detail-header" style="background:${ch.color}"><span style="font-size:26px">${ch.icon}</span><div><h4>${ch.name}</h4><p>${ch.best}</p></div></div>`;
+  html += '<div class="chart-detail-body">';
+  html += `<div class="chart-preview">${vizRenderers[ch.vizType]()}</div>`;
+  html += '<div class="chart-info">';
+  html += `<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:800;color:${ch.color};text-transform:uppercase;margin-bottom:4px">Questions It Answers</div>`;
+  ch.questions.forEach(q => html += `<div class="chart-question" style="--arrow-color:${ch.color}">${q}</div>`);
+  html += '</div>';
+  html += infoCard('#2a9d8f','✅','When to Use',ch.when);
+  html += infoCard('#d62828','⚠️','When to Avoid',ch.avoid);
+  html += infoCard('#1d3557','🔧','In Tableau',ch.tableau);
+  html += '</div></div></div>';
+  container.innerHTML = html;
+}
+
+window.catPick = function(i) { catalogActive=i; renderActiveTab(); };
+
+// ─── TAB 5: CHART QUIZ ───
+function renderQuiz(container) {
+  const done = quizResults.length === quizData.length;
+  if (done) {
+    const score = quizResults.filter(Boolean).length;
+    const col = score>=7?'#2a9d8f':score>=5?'#f4a261':'#d62828';
+    const emoji = score>=7?'🎉':score>=5?'👍':'💪';
+    const msg = score>=7?'Excellent chart instincts!':score>=5?'Good work — check the Chart Guide tab for the ones you missed.':'Check the Chart Guide tab and try again!';
+    let dots = '<div class="progress-dots">';
+    quizResults.forEach((r,i) => dots += `<div class="progress-dot" style="background:${r?'#2a9d8f':'#d62828'}"></div>`);
+    dots += '</div>';
+    container.innerHTML = `<div class="center" style="padding:32px"><div style="font-size:48px;margin-bottom:12px">${emoji}</div><h3 style="font-weight:900;text-transform:uppercase;color:#111;margin-bottom:8px">Quiz Complete!</h3><div style="font-size:28px;font-weight:800;color:${col};margin-bottom:8px">${score} / ${quizData.length}</div><p style="color:#636e72;max-width:400px;margin:0 auto 16px;font-size:14px">${msg}</p>${dots}<button class="check-btn" onclick="quizRestart()" style="margin-top:12px">Try Again</button></div>`;
+    return;
+  }
+
+  const sc = quizData[quizCur];
+  const isCorrect = quizSel === sc.correct;
+  let dots = '<div class="progress-dots">';
+  quizData.forEach((_,i) => {
+    const bg = i<quizResults.length?(quizResults[i]?'#2a9d8f':'#d62828'):i===quizCur?'#1d3557':'#ccc';
+    dots += `<div class="progress-dot" style="background:${bg}"></div>`;
+  });
+  dots += '</div>';
+
+  let html = `<div class="section-title"><h3>Choose the Right Chart</h3><p>Match each scenario to its best visualization.</p></div>${dots}`;
+  html += '<div class="quiz-card">';
+  html += `<div class="quiz-scenario"><div style="font-size:11px;font-weight:800;color:#1d3557;text-transform:uppercase;margin-bottom:4px">Scenario ${quizCur+1} of ${quizData.length}</div><p style="margin:0 0 8px;font-size:14px;line-height:1.5;color:#2d3436">${sc.scenario}</p><p style="margin:0;font-weight:800;font-size:14px;color:#111">${sc.question}</p></div>`;
+  html += '<div class="quiz-options">';
+  sc.options.forEach((opt,i) => {
+    let bg='#fff',brd='#ddd',col='#2d3436';
+    if (quizShow) {
+      if (i===sc.correct){bg='#2a9d8f18';brd='#2a9d8f';col='#2a9d8f';}
+      else if(i===quizSel&&!isCorrect){bg='#d6282812';brd='#d62828';col='#d62828';}
+    } else if(quizSel===i){bg='#1d355712';brd='#1d3557';col='#1d3557';}
+    html += `<button class="quiz-option" style="background:${bg};border-color:${brd};color:${col}" onclick="quizPick(${i})">${quizShow&&i===sc.correct?'✓ ':''}${opt}</button>`;
+  });
+  html += '</div>';
+  if (quizSel!==null && !quizShow) html += '<div class="center" style="padding:0 14px 14px"><button style="padding:8px 28px;background:#1d3557;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;text-transform:uppercase" onclick="quizCheck()">Check Answer</button></div>';
+  if (quizShow) {
+    const ebg = isCorrect?'#2a9d8f0a':'#f4a26115';
+    const ebc = isCorrect?'#2a9d8f40':'#f4a26140';
+    const ecol = isCorrect?'#2a9d8f':'#f4a261';
+    html += `<div class="quiz-explain" style="background:${ebg};border:1px solid ${ebc}">`;
+    html += `<div style="font-weight:800;font-size:13px;color:${ecol};text-transform:uppercase;margin-bottom:4px">${isCorrect?'✓ Correct!':'Not quite:'}</div>`;
+    html += `<p style="margin:0 0 8px;font-size:13px;line-height:1.5;color:#2d3436">${sc.explanation}</p>`;
+    html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><span style="font-size:10px;background:#1d355715;padding:2px 8px;border-radius:4px;color:#1d3557;font-weight:700">📊 ${sc.dataType}</span><span style="font-size:10px;background:#6c5ce715;padding:2px 8px;border-radius:4px;color:#6c5ce7;font-weight:700">🔧 ${sc.fields}</span></div>`;
+    html += `<div style="text-align:right"><button style="padding:7px 22px;background:#d62828;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:800;cursor:pointer;text-transform:uppercase" onclick="quizNext()">${quizCur<quizData.length-1?'Next →':'Results'}</button></div>`;
+    html += '</div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+window.quizPick = function(i) { if (!quizShow) { quizSel=i; renderActiveTab(); } };
+window.quizCheck = function() { quizShow=true; renderActiveTab(); };
+window.quizNext = function() { quizResults.push(quizSel===quizData[quizCur].correct); quizSel=null; quizShow=false; quizCur++; renderActiveTab(); };
+window.quizRestart = function() { quizCur=0; quizSel=null; quizShow=false; quizResults=[]; renderActiveTab(); };
+
+// ─── INIT ───
+initTabs();
+renderActiveTab();
+</script>
+</body>
+</html>
