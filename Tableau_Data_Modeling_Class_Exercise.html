@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The One Where They Learn Tableau</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Inter:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f5e6d0;
+    background-image: 
+      radial-gradient(circle at 20% 50%, rgba(139,69,19,0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 50%, rgba(75,0,130,0.03) 0%, transparent 50%);
+    color: #2c1810;
+    line-height: 1.65;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  /* ===== FRIENDS HERO ===== */
+  .hero {
+    background: linear-gradient(135deg, #4a154b 0%, #6b2fa0 40%, #7b3fa8 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 40px 36px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    border: 4px solid #ffd700;
+  }
+  .hero::before {
+    content: '☕';
+    position: absolute;
+    top: 12px;
+    right: 20px;
+    font-size: 2rem;
+    opacity: 0.3;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 60px;
+    background: radial-gradient(ellipse, rgba(255,215,0,0.15) 0%, transparent 70%);
+  }
+  .hero .friends-title {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 2.1rem;
+    color: #ffd700;
+    margin-bottom: 4px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    letter-spacing: 1px;
+  }
+  .hero .friends-dots {
+    color: #ff6b6b;
+    font-size: 1.8rem;
+    margin: 0 4px;
+  }
+  .hero .episode-subtitle {
+    font-size: 1rem;
+    opacity: 0.85;
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+  .hero .learning-goals {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    text-align: left;
+    border: 1px solid rgba(255,215,0,0.2);
+  }
+  .hero .learning-goals strong { color: #ffd700; }
+
+  /* ===== PEEPHOLE FRAME DECORATION ===== */
+  .peephole-divider {
+    text-align: center;
+    margin: 8px 0 20px;
+    font-size: 1.5rem;
+  }
+
+  /* ===== HOW IT WORKS (Central Perk Menu Board style) ===== */
+  .how-it-works {
+    background: #3d2b1f;
+    color: #f5e6d0;
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    border: 3px solid #8b5e3c;
+    position: relative;
+  }
+  .how-it-works::before {
+    content: '☕ Central Perk Study Guide';
+    display: block;
+    font-family: 'Permanent Marker', cursive;
+    font-size: 0.85rem;
+    color: #d4a76a;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+  .how-it-works h2 {
+    font-size: 1.15rem;
+    color: #ffd700;
+    margin-bottom: 12px;
+    font-family: 'Permanent Marker', cursive;
+  }
+  .how-it-works > p { font-size: 0.9rem; opacity: 0.85; }
+  .phase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .phase-card {
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid rgba(255,215,0,0.15);
+  }
+  .phase-card .phase-num {
+    display: inline-block;
+    background: #ffd700;
+    color: #3d2b1f;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    line-height: 28px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .phase-card .phase-title { font-weight: 600; font-size: 0.9rem; color: #ffd700; margin-bottom: 4px; }
+  .phase-card .phase-time { font-size: 0.78rem; color: #d4a76a; }
+  .phase-card .phase-desc { font-size: 0.82rem; color: #e8d5c0; margin-top: 6px; }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-bar-container {
+    background: white;
+    border-radius: 14px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(139,69,19,0.08);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 2px solid #d4a76a;
+  }
+  .progress-bar-container span { font-size: 0.82rem; font-weight: 600; color: #8b5e3c; white-space: nowrap; }
+  .progress-track {
+    flex: 1;
+    background: #f0e0cc;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #ffd700);
+    border-radius: 5px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  /* ===== TABS (Purple door / apartment style) ===== */
+  .tab-container {
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(139,69,19,0.08);
+    border: 2px solid #d4a76a;
+  }
+  .tab-nav {
+    display: flex;
+    background: #4a154b;
+    border-bottom: 3px solid #ffd700;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 14px 10px;
+    text-align: center;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255,255,255,0.5);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -3px;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: rgba(255,255,255,0.8); }
+  .tab-btn.active { border-bottom-color: #ffd700; color: white; }
+  .tab-btn .tab-label { display: block; font-size: 0.72rem; font-weight: 400; color: rgba(255,255,255,0.35); margin-top: 2px; }
+  .tab-btn.active .tab-label { color: #ffd700; }
+
+  .tab-panel { display: none; padding: 28px 32px; }
+  .tab-panel.active { display: block; }
+
+  /* ===== SECTIONS ===== */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .section-header .icon { font-size: 1.3rem; }
+  .section-header h3 { font-size: 1.1rem; font-weight: 700; color: #4a154b; }
+  .section-intro {
+    font-size: 0.9rem;
+    color: #6b4c3b;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e8d5c0;
+  }
+
+  /* ===== CONCEPT BOX (like a couch cushion) ===== */
+  .concept-box {
+    background: linear-gradient(135deg, #f3e8ff, #ede0ff);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 22px;
+    border-left: 4px solid #7b3fa8;
+  }
+  .concept-box h4 { font-size: 0.85rem; color: #7b3fa8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .concept-box p { font-size: 0.88rem; color: #333; }
+
+  /* ===== VIDEO PLACEHOLDER ===== */
+  .video-placeholder {
+    background: #fff8f0;
+    border: 2px dashed #d4a76a;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    font-size: 0.85rem;
+    color: #8b5e3c;
+    text-align: center;
+  }
+
+  /* ===== STEPS (collapsible) ===== */
+  .step {
+    border: 1px solid #e8d5c0;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+    background: white;
+  }
+  .step:hover { box-shadow: 0 2px 8px rgba(139,69,19,0.06); }
+  .step-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    gap: 12px;
+    background: #fdf8f2;
+  }
+  .step-header:hover { background: #f8eedf; }
+  .step-num {
+    background: #4a154b;
+    color: white;
+    min-width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .step-num.done { background: #22c55e; }
+  .step-title { flex: 1; font-weight: 600; font-size: 0.9rem; color: #3d2b1f; }
+  .step-arrow {
+    font-size: 0.75rem;
+    color: #bba48d;
+    transition: transform 0.2s;
+  }
+  .step.open .step-arrow { transform: rotate(180deg); }
+  .step-body {
+    display: none;
+    padding: 4px 18px 18px 56px;
+    font-size: 0.88rem;
+    color: #555;
+  }
+  .step.open .step-body { display: block; }
+
+  /* ===== CHECKBOXES ===== */
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 8px 0;
+  }
+  .check-item input[type="checkbox"] {
+    margin-top: 4px;
+    accent-color: #7b3fa8;
+    width: 16px;
+    height: 16px;
+  }
+  .check-item label { cursor: pointer; }
+  .check-item label code {
+    background: #f3e8ff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.84rem;
+    color: #7b3fa8;
+  }
+
+  /* ===== THINK ABOUT IT ===== */
+  .think-box {
+    background: #fdf8f2;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 14px;
+    border: 1px solid #e8d5c0;
+  }
+  .think-box h5 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #ff6b6b; margin-bottom: 6px; }
+  .think-box ul { padding-left: 18px; font-size: 0.86rem; color: #6b4c3b; }
+  .think-box li { margin-bottom: 4px; }
+
+  /* ===== TEACH-BACK BOX ===== */
+  .teachback-box {
+    background: linear-gradient(135deg, #fff8e1, #fff3cd);
+    border: 2px solid #ffd700;
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-top: 24px;
+  }
+  .teachback-box h4 { color: #b8860b; font-size: 0.95rem; margin-bottom: 10px; font-family: 'Permanent Marker', cursive; }
+  .teachback-box ol { padding-left: 20px; font-size: 0.88rem; color: #6b4c3b; }
+  .teachback-box li { margin-bottom: 6px; }
+
+  /* ===== YOUR TURN ===== */
+  .your-turn {
+    background: #f0fdf4;
+    border-left: 3px solid #22c55e;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-top: 16px;
+  }
+  .your-turn h5 { color: #16a34a; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .your-turn p { font-size: 0.88rem; color: #444; }
+
+  /* ===== WRAP UP ===== */
+  .wrapup {
+    background: white;
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(139,69,19,0.08);
+    border: 2px solid #d4a76a;
+  }
+  .wrapup h2 { font-size: 1.1rem; margin-bottom: 4px; color: #4a154b; font-family: 'Permanent Marker', cursive; }
+  .wrapup .wrapup-sub { font-style: italic; color: #8b5e3c; font-size: 0.85rem; margin-bottom: 14px; }
+
+  /* ===== FRIENDS QUOTE ===== */
+  .friends-quote {
+    text-align: center;
+    padding: 20px;
+    font-family: 'Permanent Marker', cursive;
+    color: #7b3fa8;
+    font-size: 1rem;
+    opacity: 0.7;
+  }
+
+  /* UTILITY */
+  .mt { margin-top: 14px; }
+  .mb { margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="friends-title">The One Where They Learn Tableau</div>
+    <p class="episode-subtitle">Season 6, Episode: Correlation, Regression & Clustering</p>
+    <div class="learning-goals">
+      <strong>By the end of today you will be able to:</strong> identify and interpret correlation between variables, build and compare regression models, apply cluster analysis to segment data, and explain these techniques clearly to others — because that's what friends do.
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar-container">
+    <span>☕ Your Progress</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <span id="progressText">0%</span>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-it-works">
+    <h2>How Today Works</h2>
+    <p style="font-size:0.9rem; opacity:0.85;">You'll become an expert in <em>one</em> technique, then teach it to the rest of the class. Everyone starts with the same setup, then splits into specialist groups. It's like when Ross tried to teach everyone about dinosaurs, except people will actually listen this time.</p>
+    <div class="phase-grid">
+      <div class="phase-card">
+        <div class="phase-num">1</div>
+        <div class="phase-title">Setup</div>
+        <div class="phase-time">~10 min · Everyone</div>
+        <div class="phase-desc">Load the data, get oriented, and watch your group's video.</div>
+      </div>
+      <div class="phase-card">
+        <div class="phase-num">2</div>
+        <div class="phase-title">Deep Dive</div>
+        <div class="phase-time">~20 min · Individual</div>
+        <div class="phase-desc">Work through your assigned technique independently.</div>
+      </div>
+      <div class="phase-card">
+        <div class="phase-num">3</div>
+        <div class="phase-title">Teach-Back Prep</div>
+        <div class="phase-time">~10 min · Your Group</div>
+        <div class="phase-desc">Compare notes with your group and prepare to teach the class.</div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-container">
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="setup">
+        Setup
+        <span class="tab-label">Everyone</span>
+      </button>
+      <button class="tab-btn" data-tab="correlation">
+        Correlation
+        <span class="tab-label">Group A</span>
+      </button>
+      <button class="tab-btn" data-tab="regression">
+        Regression
+        <span class="tab-label">Group B</span>
+      </button>
+      <button class="tab-btn" data-tab="clustering">
+        Clustering
+        <span class="tab-label">Group C</span>
+      </button>
+    </nav>
+
+    <!-- ============ SETUP TAB ============ -->
+    <div class="tab-panel active" id="tab-setup">
+      <div class="section-header"><span class="icon">☕</span><h3>Getting Started with Superstore Data</h3></div>
+      <p class="section-intro">Everyone completes this section first. You'll load the dataset and get familiar with it before splitting into groups. Once you're set up, click your assigned group tab above — your first step there will be watching a short video.</p>
+
+      <div class="step open" data-group="setup">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">1</div>
+          <div class="step-title">Connect to the dataset</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="check-item"><input type="checkbox" id="s1" onchange="updateProgress()"><label for="s1">Open Tableau. Under <strong>Connect → Saved Data Sources</strong>, select <code>Sample - Superstore</code>.</label></div>
+          <div class="check-item"><input type="checkbox" id="s2" onchange="updateProgress()"><label for="s2">Click on the <strong>Data Source</strong> tab at the bottom to browse the fields.</label></div>
+          <div class="check-item"><input type="checkbox" id="s3" onchange="updateProgress()"><label for="s3">Identify at least <strong>3 numerical variables</strong> (e.g., Sales, Profit, Discount, Quantity) and <strong>3 categorical variables</strong> (e.g., Category, Region, Segment, Ship Mode).</label></div>
+          <div class="think-box">
+            <h5>🔍 Think About It</h5>
+            <ul>
+              <li>Just from column names, which pairs of variables might be correlated?</li>
+              <li>What kinds of patterns might a store manager actually care about?</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============ CORRELATION TAB (GROUP A) ============ -->
+    <div class="tab-panel" id="tab-correlation">
+      <div class="section-header"><span class="icon">📊</span><h3>The One with the Scatter Plots</h3></div>
+      <p class="section-intro">Your job is to become the class expert on <strong>correlation</strong> — how two numerical variables move together. You'll build a correlation matrix that reveals the relationships between many variables at once.</p>
+
+      <div class="concept-box">
+        <h4>Key Concept</h4>
+        <p><strong>Correlation</strong> measures the strength and direction of the relationship between two numerical variables, from -1 (perfect negative) to +1 (perfect positive), with 0 meaning no relationship. A <strong>correlation matrix</strong> lets you see these values across multiple categories at once — so instead of checking one pair at a time, you can spot patterns and outliers across the whole dataset. In Tableau, you build this using the <code>CORR</code> function inside a calculated field, then display the values as colored squares.</p>
+      </div>
+
+      <div class="video-placeholder">
+        🎬 <strong>Watch first:</strong> <a href="https://www.youtube.com/watch?v=Q3W1DuBnkwI" target="_blank">Correlation Matrix in Tableau (YouTube)</a> — watch through the 4-minute mark, then you can stop. This shows you the technique you'll be building.
+      </div>
+
+      <div class="step" data-group="correlation">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">1</div>
+          <div class="step-title">Set up the matrix layout</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="check-item"><input type="checkbox" id="ca1" onchange="updateProgress()"><label for="ca1">Go to a <strong>new worksheet</strong>. Drag <code>Order Date</code> to <strong>Columns</strong> and set it to <strong>YEAR</strong>.</label></div>
+          <div class="check-item"><input type="checkbox" id="ca2" onchange="updateProgress()"><label for="ca2">Drag <code>Sub-Category</code> to <strong>Rows</strong>. Set the view to <strong>Entire View</strong> (dropdown in the toolbar).</label></div>
+          <div class="think-box">
+            <h5>🔍 Think About It</h5>
+            <ul>
+              <li>You're setting up a grid of sub-categories by year. Each cell will eventually show a correlation value — one per sub-category per year.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-group="correlation">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">2</div>
+          <div class="step-title">Create the CORR calculated field</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <p style="margin-bottom:10px; color:#6b4c3b;">This is the key step. You'll use Tableau's <code>CORR</code> function with an INCLUDE Level of Detail expression to calculate the correlation between Sales and Quantity at the order level.</p>
+          <div class="check-item"><input type="checkbox" id="ca3" onchange="updateProgress()"><label for="ca3">In the Data Pane, click the dropdown arrow → <strong>Create Calculated Field</strong>. Name it something like <code>Corr Sales and Quantity</code>.</label></div>
+          <div class="check-item"><input type="checkbox" id="ca4" onchange="updateProgress()"><label for="ca4">Enter this formula (follow along with the video if needed):<br><br><code style="display:block; background:#f3e8ff; padding:10px; border-radius:6px; margin-top:6px; white-space:pre-wrap; font-size:0.84rem;">CORR(
+  {INCLUDE [Order ID]: SUM([Sales])},
+  {INCLUDE [Order ID]: SUM([Quantity])}
+)</code></label></div>
+          <div class="check-item"><input type="checkbox" id="ca5" onchange="updateProgress()"><label for="ca5">Click <strong>OK</strong>. The calculation rolls up Sales and Quantity to the order level, then computes the correlation within each cell of your matrix (year × sub-category).</label></div>
+          <div class="think-box">
+            <h5>🔍 Think About It</h5>
+            <ul>
+              <li>Why Sales vs. Quantity? If a sub-category sells more items, you'd expect higher sales — so these should be strongly correlated. But are they always?</li>
+              <li>The INCLUDE expression tells Tableau: "first sum up Sales and Quantity at the Order ID level, <em>then</em> calculate the correlation across those orders."</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-group="correlation">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">3</div>
+          <div class="step-title">Build and interpret the matrix</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="check-item"><input type="checkbox" id="ca6" onchange="updateProgress()"><label for="ca6">Drag your new <code>Corr Sales and Quantity</code> field onto <strong>Text</strong> on the Marks card. You should see correlation values in each cell.</label></div>
+          <div class="check-item"><input type="checkbox" id="ca7" onchange="updateProgress()"><label for="ca7">Now also drag it onto <strong>Color</strong>. Change the <strong>Mark type</strong> to <strong>Square</strong>. You now have a color-coded correlation matrix.</label></div>
+          <div class="check-item"><input type="checkbox" id="ca8" onchange="updateProgress()"><label for="ca8">Look across the rows. Are correlations consistent year to year for each sub-category, or do some jump around? Identify any sub-categories with surprisingly low or negative correlations.</label></div>
+          <div class="think-box">
+            <h5>🔍 Think About It</h5>
+            <ul>
+              <li>Most sub-categories should show strong positive correlations. If one year has a much lower value, what might that mean? (Outlier orders? Unusual discounting?)</li>
+              <li>If you were a manager, which sub-categories would you want to investigate further based on this matrix?</li>
+              <li>What other pairs of measures might be interesting to correlate? (e.g., Discount vs. Profit, Quantity vs. Shipping Cost)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-group="correlation">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">4</div>
+          <div class="step-title">Explore on your own</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="your-turn">
+            <h5>🔬 Your Turn</h5>
+            <p>Create a <strong>second calculated field</strong> that correlates a different pair of measures — for example, <code>Discount</code> vs. <code>Profit</code>, or <code>Quantity</code> vs. <code>Discount</code>. Swap it into your matrix and see how the picture changes. You can also try replacing <code>Sub-Category</code> with <code>Region</code> or <code>Segment</code> on Rows.</p>
+          </div>
+          <div class="check-item"><input type="checkbox" id="ca9" onchange="updateProgress()"><label for="ca9">I created a second CORR calculated field with a different pair of measures.</label></div>
+          <div class="check-item"><input type="checkbox" id="ca10" onchange="updateProgress()"><label for="ca10">I can describe at least two interesting findings and explain what they might mean for the business.</label></div>
+        </div>
+      </div>
+
+      <div class="teachback-box">
+        <h4>🎤 Preparing Your Teach-Back (~10 min prep)</h4>
+        <p style="font-size:0.88rem; color:#6b4c3b; margin-bottom:10px;">Your group will teach the class this technique. Plan who covers what, and be ready to share your screen:</p>
+        <ol>
+          <li><strong>What is correlation?</strong> Explain what the values -1 to +1 mean in plain language. (1 min)</li>
+          <li><strong>Walk through the CORR calculated field.</strong> Show the class the formula and explain what the INCLUDE expression does — why do we need to roll up to the order level first? (2 min)</li>
+          <li><strong>Show your matrix.</strong> Walk through the color-coded grid. Which sub-categories are strongly correlated? Did any years look different than expected? (2 min)</li>
+          <li><strong>Show your own exploration.</strong> What other measure pairs did you try? What did you find? (2 min)</li>
+          <li><strong>Business takeaway:</strong> If you were advising this store's manager, what would the matrix tell them to look into? (1 min)</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- ============ REGRESSION TAB (GROUP B) ============ -->
+    <div class="tab-panel" id="tab-regression">
+      <div class="section-header"><span class="icon">📈</span><h3>The One with the Trend Lines</h3></div>
+      <p class="section-intro">Your job is to become the class expert on <strong>regression over time</strong> — modeling how sales trend across months and which model type fits best.</p>
+
+      <div class="concept-box">
+        <h4>Key Concept</h4>
+        <p><strong>Regression</strong> models the relationship between variables to identify trends and make predictions. <strong>Linear</strong> fits a straight line, <strong>exponential</strong> models growth/decay, and <strong>polynomial</strong> captures curves. The <strong>R² value</strong> indicates how well the model fits. A <strong>p-value below 0.05</strong> tells you the relationship is statistically significant (probably not random chance).</p>
+      </div>
+
+      <div class="video-placeholder">
+        🎬 <strong>Watch first:</strong> <a href="https://www.youtube.com/watch?v=CLocpSMXO-4" target="_blank">Regression / Trend Lines in Tableau (YouTube)</a> — you only need the first ~1 minute, which covers how to create a regression. Once they start building a new worksheet and getting into advanced calculations, you can stop.
+      </div>
+
+      <div class="step" data-group="regression">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">1</div>
+          <div class="step-title">Build a sales-over-time line chart</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="check-item"><input type="checkbox" id="rb1" onchange="updateProgress()"><label for="rb1">Open a <strong>new worksheet</strong>. Drag <code>Order Date</code> to <strong>Columns</strong>.</label></div>
+          <div class="check-item"><input type="checkbox" id="rb2" onchange="updateProgress()"><label for="rb2">Right-click the date pill on Columns and change it to <strong>MONTH (discrete)</strong> — the option that shows month names without a year, usually the second "Month" in the list.</label></div>
+          <div class="check-item"><input type="checkbox" id="rb3" onchange="updateProgress()"><label for="rb3">Drag <code>Sales</code> to <strong>Rows</strong> (it should default to SUM).</label></div>
+          <div class="check-item"><input type="checkbox" id="rb4" onchange="updateProgress()"><label for="rb4">Drag <code>Category</code> to <strong>Color</strong>.</label></div>
+          <div class="check-item"><input type="checkbox" id="rb5" onchange="updateProgress()"><label for="rb5">Change the <strong>Marks type</strong> (dropdown at top of Marks card) to <strong>Line</strong>.</label></div>
+        </div>
+      </div>
+
+      <div class="step" data-group="regression">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">2</div>
+          <div class="step-title">Add and compare trend lines</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="check-item"><input type="checkbox" id="rb6" onchange="updateProgress()"><label for="rb6">Click the <strong>Analytics Pane</strong> (to the left of the data pane). Drag <strong>Trend Line</strong> onto the visualization and choose <strong>Linear</strong>.</label></div>
+          <div class="check-item"><input type="checkbox" id="rb7" onchange="updateProgress()"><label for="rb7">Hover over the trend lines. Note the <strong>R²</strong> and <strong>p-value</strong> for each category.</label></div>
+          <div class="check-item"><input type="checkbox" id="rb8" onchange="updateProgress()"><label for="rb8">Right-click a trend line → <strong>Trend Lines → Edit Trend Lines</strong>. Switch the model type to <strong>Polynomial</strong> (try degree 2, then 3). How does the fit change?</label></div>
+          <div class="think-box">
+            <h5>🔍 Think About It</h5>
+            <ul>
+              <li>Which model type gives the highest R² for each category?</li>
+              <li>Are the p-values below 0.05? What does it mean if they're not?</li>
+              <li>Does the data show any <strong>seasonality</strong> — recurring peaks or dips?</li>
+              <li>Does a higher-degree polynomial always mean a "better" model? (Hint: think about overfitting.)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-group="regression">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">3</div>
+          <div class="step-title">Experiment with granularity and variables</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="your-turn">
+            <h5>🔬 Your Turn</h5>
+            <p>Try changing date granularity to <strong>WEEK</strong> or <strong>QUARTER</strong> — how does the trend line change? Try swapping <code>Category</code> for <code>Region</code> on Color. What new patterns emerge?</p>
+          </div>
+          <div class="check-item"><input type="checkbox" id="rb9" onchange="updateProgress()"><label for="rb9">I experimented with at least one different granularity or color variable.</label></div>
+          <div class="check-item"><input type="checkbox" id="rb10" onchange="updateProgress()"><label for="rb10">I can explain the difference between linear, polynomial, and exponential trend lines and when each might be appropriate.</label></div>
+          <p class="mt" style="font-size:0.85rem; color:#8b5e3c;"><strong>Bonus:</strong> Try adding <code>Profit</code> as a dual-axis chart alongside Sales for richer insight. (Right-click Profit on Rows → Dual Axis.)</p>
+        </div>
+      </div>
+
+      <div class="teachback-box">
+        <h4>🎤 Preparing Your Teach-Back (~10 min prep)</h4>
+        <p style="font-size:0.88rem; color:#6b4c3b; margin-bottom:10px;">Your group will teach the class this technique. Plan who covers what, and be ready to share your screen:</p>
+        <ol>
+          <li><strong>What is regression?</strong> Explain the difference between linear, polynomial, and exponential models. What do R² and p-value tell us? (2 min)</li>
+          <li><strong>Walk through your time-series chart.</strong> Show how you built it and what the linear trend shows. (2 min)</li>
+          <li><strong>Compare model types.</strong> Show the class what happens when you switch to polynomial. Which fit better and why? (2 min)</li>
+          <li><strong>Your exploration + business takeaway:</strong> What did changing granularity reveal? What would a retail manager do with this? (2 min)</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- ============ CLUSTERING TAB (GROUP C) ============ -->
+    <div class="tab-panel" id="tab-clustering">
+      <div class="section-header"><span class="icon">🔵</span><h3>The One with the Clusters</h3></div>
+      <p class="section-intro">Your job is to become the class expert on <strong>clustering</strong> — grouping similar data points together to find natural segments in the data.</p>
+
+      <div class="concept-box">
+        <h4>Key Concept</h4>
+        <p><strong>Cluster analysis</strong> groups data points that share similar characteristics. Tableau uses a <strong>k-means algorithm</strong> — you choose how many clusters (k) and it assigns each point to its nearest group. This is useful for <strong>customer segmentation</strong>, identifying outliers, or discovering natural groupings you didn't expect. There's no single "correct" number of clusters — it depends on what's useful for the business question.</p>
+      </div>
+
+      <div class="video-placeholder">
+        🎬 <strong>Watch first:</strong> <a href="https://www.youtube.com/watch?v=81vXlkOjHEI" target="_blank">Cluster Analysis in Tableau (YouTube)</a> — gives you a quick overview before you start building.
+      </div>
+
+      <div class="step" data-group="clustering">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">1</div>
+          <div class="step-title">Build a customer scatter plot</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="check-item"><input type="checkbox" id="cc1" onchange="updateProgress()"><label for="cc1">Open a <strong>new worksheet</strong>. Drag <code>Sales</code> to <strong>Columns</strong> and <code>Profit</code> to <strong>Rows</strong>.</label></div>
+          <div class="check-item"><input type="checkbox" id="cc2" onchange="updateProgress()"><label for="cc2">Drag <code>Customer Name</code> to <strong>Detail</strong> on the Marks card. Now each dot represents one customer.</label></div>
+        </div>
+      </div>
+
+      <div class="step" data-group="clustering">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">2</div>
+          <div class="step-title">Apply clustering</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="check-item"><input type="checkbox" id="cc3" onchange="updateProgress()"><label for="cc3">Click the <strong>Analytics Pane</strong>. Drag <strong>Cluster</strong> onto the scatter plot.</label></div>
+          <div class="check-item"><input type="checkbox" id="cc4" onchange="updateProgress()"><label for="cc4">In the dialog that appears, set the number of clusters to <strong>3</strong>. Click OK.</label></div>
+          <div class="check-item"><input type="checkbox" id="cc5" onchange="updateProgress()"><label for="cc5">Observe how the dots are now colored by cluster. Hover over points in each cluster to understand the ranges.</label></div>
+          <div class="think-box">
+            <h5>🔍 Think About It</h5>
+            <ul>
+              <li>Can you describe each cluster in plain language? (e.g., "high sales, high profit" vs. "low sales, negative profit")</li>
+              <li>What would you <em>name</em> each cluster if you were presenting to a manager?</li>
+              <li>Are there any customers who seem like outliers — not fitting neatly into any group?</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="step" data-group="clustering">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num">3</div>
+          <div class="step-title">Experiment with different settings</div>
+          <div class="step-arrow">▼</div>
+        </div>
+        <div class="step-body">
+          <div class="check-item"><input type="checkbox" id="cc6" onchange="updateProgress()"><label for="cc6">Try changing the cluster count to <strong>2</strong>, then <strong>5</strong>. How does the grouping change? Is there a number that feels most natural?</label></div>
+          <div class="check-item"><input type="checkbox" id="cc7" onchange="updateProgress()"><label for="cc7">Remove <code>Customer Name</code> from Detail and add <code>State</code> instead. Now each dot is a state. Re-apply clustering. How do the clusters shift?</label></div>
+          <div class="your-turn">
+            <h5>🔬 Your Turn</h5>
+            <p>Try a completely different pair of variables on the axes (e.g., <code>Quantity</code> vs. <code>Discount</code>, or <code>Sales</code> vs. <code>Shipping Cost</code>). Apply clustering again. What new segments emerge? Could these be useful to a business?</p>
+          </div>
+          <div class="check-item"><input type="checkbox" id="cc8" onchange="updateProgress()"><label for="cc8">I explored at least one alternative variable combination with clustering and can explain what I found.</label></div>
+        </div>
+      </div>
+
+      <div class="teachback-box">
+        <h4>🎤 Preparing Your Teach-Back (~10 min prep)</h4>
+        <p style="font-size:0.88rem; color:#6b4c3b; margin-bottom:10px;">Your group will teach the class this technique. Plan who covers what, and be ready to share your screen:</p>
+        <ol>
+          <li><strong>What is cluster analysis?</strong> Explain what k-means does in plain language. Why is choosing the number of clusters a judgment call? (2 min)</li>
+          <li><strong>Walk through the customer scatter plot.</strong> Show the 3-cluster result and describe what each cluster represents. (2 min)</li>
+          <li><strong>Show the effect of changing settings.</strong> What happened with 2 vs. 5 clusters? What about swapping Customer for State? (2 min)</li>
+          <li><strong>Your exploration + business takeaway:</strong> What segments did you find? How could a company act on this information? (2 min)</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRIENDS FOOTER -->
+  <div class="friends-quote">
+    "It's like all my life everyone's told me, 'You're a shoe.' But what if I don't want to be a shoe? What if I want to be a... data analyst?" ☕
+  </div>
+
+</div>
+
+<script>
+  // TAB SWITCHING
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // COLLAPSIBLE STEPS
+  function toggleStep(header) {
+    const step = header.parentElement;
+    step.classList.toggle('open');
+  }
+
+  // PROGRESS TRACKING
+  function updateProgress() {
+    const all = document.querySelectorAll('input[type="checkbox"]');
+    const checked = document.querySelectorAll('input[type="checkbox"]:checked');
+    const pct = Math.round((checked.length / all.length) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = pct + '%';
+
+    document.querySelectorAll('.step').forEach(step => {
+      const boxes = step.querySelectorAll('input[type="checkbox"]');
+      const done = step.querySelectorAll('input[type="checkbox"]:checked');
+      const num = step.querySelector('.step-num');
+      if (boxes.length > 0 && boxes.length === done.length) {
+        num.classList.add('done');
+      } else {
+        num.classList.remove('done');
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
