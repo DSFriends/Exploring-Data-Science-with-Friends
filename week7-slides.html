@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 7: The One Where We Explore Data Modeling</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+  :root {
+    --black: #1a1a1a;
+    --red: #c0392b;
+    --yellow: #f0b429;
+    --cyan: #3ab5d4;
+    --teal: #2a6b6b;
+    --white: #f7f7f5;
+    --mid: #e8e8e5;
+    --text: #222;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--white);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .deck { width: 100%; height: 100vh; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    padding: 48px 56px;
+    background: var(--white);
+    overflow-y: auto;
+  }
+  .slide.active { display: flex; }
+
+  .nav {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 12px; align-items: center;
+    background: rgba(26,26,26,0.92); border-radius: 40px;
+    padding: 10px 20px; z-index: 100;
+  }
+  .nav button {
+    background: none; border: none; color: #fff;
+    font-size: 18px; cursor: pointer; padding: 4px 12px;
+    border-radius: 20px; transition: background 0.2s;
+  }
+  .nav button:hover { background: rgba(255,255,255,0.15); }
+  .nav button:disabled { opacity: 0.3; cursor: default; }
+  #slideCounter { color: rgba(255,255,255,0.6); font-size: 13px; min-width: 60px; text-align: center; }
+
+  .corner-deco {
+    position: absolute; top: 0; right: 0;
+    width: 120px; height: 120px; overflow: hidden; pointer-events: none;
+  }
+  .corner-deco svg { position: absolute; top: -10px; right: -10px; }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--red); margin-bottom: 12px;
+  }
+  h1 { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 900; line-height: 1.05; color: var(--black); }
+  h2 { font-size: clamp(1.4rem, 2.5vw, 2rem); font-weight: 900; color: var(--black); margin-bottom: 8px; }
+  h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+  p { font-size: 0.95rem; line-height: 1.65; color: #444; }
+  .big-p { font-size: clamp(1rem, 1.6vw, 1.2rem); line-height: 1.7; color: #333; }
+  .red-rule { width: 56px; height: 4px; background: var(--red); margin: 16px 0; }
+
+  .friends-logo {
+    font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 900;
+    letter-spacing: 0.18em; color: var(--black);
+  }
+  .friends-logo span.dot { color: var(--yellow); font-size: 0.6em; vertical-align: middle; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; margin-top: 24px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 28px; }
+  .card {
+    background: #fff; border: 1.5px solid #e0e0dc;
+    border-radius: 12px; padding: 24px;
+  }
+  .card.accent-red { border-top: 4px solid var(--red); }
+  .card.accent-yellow { border-top: 4px solid var(--yellow); }
+  .card.accent-cyan { border-top: 4px solid var(--cyan); }
+  .card.accent-teal { border-top: 4px solid var(--teal); }
+
+  .quote-circle {
+    background: #fff; border: 2px solid #e0e0dc;
+    border-radius: 50%; width: min(440px, 80vw); height: min(440px, 80vw);
+    display: flex; flex-direction: column; justify-content: center;
+    align-items: center; padding: 40px; text-align: center;
+  }
+  blockquote { font-size: clamp(0.9rem, 1.5vw, 1.05rem); line-height: 1.7; color: #333; font-style: normal; }
+  cite { display: block; margin-top: 16px; font-size: 0.78rem; font-weight: 700; color: #888; letter-spacing: 0.05em; font-style: normal; }
+
+  .spectrum-bar {
+    height: 16px; border-radius: 8px;
+    background: linear-gradient(to right, #c0392b, #e8e8e5, #3ab5d4);
+    margin: 16px 0 4px; position: relative;
+  }
+  .spectrum-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: #666; font-weight: 600; }
+
+  .scatter-label { font-size: 0.75rem; color: #888; text-align: center; margin-top: 6px; }
+  canvas { display: block; }
+
+  .prob-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.82rem; }
+  .prob-bar-bg { flex: 1; height: 12px; background: #eee; border-radius: 6px; overflow: hidden; }
+  .prob-bar-fill { height: 100%; border-radius: 6px; background: var(--cyan); transition: width 0.5s; }
+  .prob-label { width: 36px; text-align: right; font-weight: 700; font-size: 0.78rem; color: #444; }
+
+  .discuss-box {
+    background: var(--black); color: #fff;
+    border-radius: 12px; padding: 20px 24px; margin-top: 20px;
+  }
+  .discuss-box .eyebrow { color: var(--yellow); }
+  .discuss-box p { color: rgba(255,255,255,0.85); }
+
+  .jigsaw-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 28px; }
+  .jigsaw-card {
+    border-radius: 14px; padding: 28px 22px;
+    color: #fff; cursor: pointer; transition: transform 0.15s;
+  }
+  .jigsaw-card:hover { transform: translateY(-3px); }
+  .jigsaw-card h3 { font-size: 1rem; font-weight: 900; margin-bottom: 8px; color: #fff; }
+  .jigsaw-card p { color: rgba(255,255,255,0.8); font-size: 0.83rem; line-height: 1.5; }
+  .jigsaw-card .tag {
+    display: inline-block; background: rgba(255,255,255,0.2);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em;
+    margin-bottom: 12px;
+  }
+  .jc-a { background: var(--red); }
+  .jc-b { background: var(--teal); }
+  .jc-c { background: var(--black); }
+
+  .caution-banner {
+    background: var(--red); color: #fff;
+    border-radius: 10px; padding: 16px 24px;
+    font-size: 1.05rem; font-weight: 700; margin: 20px 0;
+    text-align: center;
+  }
+  .confound-explain {
+    background: var(--yellow); border-radius: 10px;
+    padding: 16px 20px; margin-top: 16px;
+  }
+  .confound-explain p { color: #333; font-size: 0.88rem; }
+
+  .progress-dots {
+    display: flex; gap: 6px; justify-content: center; margin-bottom: 0;
+  }
+  .pdot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.3); transition: background 0.2s;
+  }
+  .pdot.active { background: #fff; }
+
+  .pill {
+    display: inline-block; border-radius: 20px; padding: 4px 12px;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .pill-red { background: #fde8e8; color: var(--red); }
+  .pill-cyan { background: #e0f5fa; color: var(--teal); }
+  .pill-yellow { background: #fef5db; color: #8a6000; }
+
+  .toggle-group { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+  .toggle-btn {
+    border: 2px solid #ddd; border-radius: 20px;
+    padding: 6px 16px; font-size: 0.82rem; font-weight: 600;
+    background: #fff; cursor: pointer; transition: all 0.15s;
+  }
+  .toggle-btn.active { border-color: var(--black); background: var(--black); color: #fff; }
+
+  #s-title { justify-content: center; }
+  #s-checkin { justify-content: center; }
+
+  .slide-num-tag {
+    position: absolute; bottom: 80px; right: 40px;
+    font-size: 0.7rem; font-weight: 700; color: #ccc;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  .reflection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .reflection-card {
+    background: #fff; border: 1.5px solid #e0e0dc; border-radius: 12px;
+    padding: 18px 20px; border-left: 4px solid var(--red);
+  }
+  .reflection-card.alt { border-left-color: var(--cyan); }
+  .reflection-card.alt2 { border-left-color: var(--yellow); }
+  .reflection-card.alt3 { border-left-color: var(--teal); }
+  .reflection-card p { font-size: 0.85rem; line-height: 1.6; color: #444; }
+  .reflection-card .q-num {
+    font-size: 0.7rem; font-weight: 700; color: #aaa;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;
+  }
+
+  .full-width-example {
+    background: #fff; border: 1.5px solid #e0e0dc; border-radius: 12px;
+    padding: 20px 24px; margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- SLIDE 1: TITLE -->
+  <div class="slide active" id="s-title">
+    <div class="corner-deco">
+      <svg width="130" height="130" viewBox="0 0 130 130"><circle cx="110" cy="20" r="40" fill="#c0392b" opacity="0.85"/><circle cx="90" cy="50" r="28" fill="#3ab5d4" opacity="0.7"/><circle cx="120" cy="60" r="22" fill="#f0b429" opacity="0.8"/></svg>
+    </div>
+    <div style="max-width:640px; margin:auto 0; padding-top:20px;">
+      <div class="eyebrow">Exploring Data Science with</div>
+      <div class="friends-logo">F<span class="dot">•</span>R<span class="dot">•</span>I<span class="dot">•</span>E<span class="dot">•</span>N<span class="dot">•</span>D<span class="dot">•</span>S</div>
+      <div class="red-rule" style="width:80px;"></div>
+      <h1>The One Where We<br>Explore Data Modeling</h1>
+      <p style="margin-top:20px;" class="big-p">Week 7 &nbsp;|&nbsp; March 16</p>
+    </div>
+    <div style="position:absolute; bottom:80px; left:56px;">
+      <div style="display:flex; gap:10px;">
+        <div style="width:44px; height:44px; border-radius:50%; background:var(--red);"></div>
+        <div style="width:44px; height:44px; border-radius:50%; background:var(--yellow);"></div>
+        <div style="width:44px; height:44px; border-radius:50%; background:var(--cyan);"></div>
+        <div style="width:44px; height:44px; border-radius:50%; background:var(--teal);"></div>
+      </div>
+    </div>
+    <div class="slide-num-tag">01</div>
+  </div>
+
+  <!-- SLIDE 2: CHECK-IN -->
+  <div class="slide" id="s-checkin">
+    <div class="corner-deco">
+      <svg width="130" height="130" viewBox="0 0 130 130"><rect x="70" y="-10" width="80" height="80" rx="8" fill="#1a1a1a" opacity="0.08"/></svg>
+    </div>
+    <div style="max-width:700px;">
+      <div class="eyebrow">Weekly Check-In</div>
+      <h1>Internship Updates</h1>
+      <div class="red-rule"></div>
+      <div class="two-col" style="margin-top:28px;">
+        <div class="card accent-red">
+          <h3>What are you working on?</h3>
+          <p>Share a project or task that's been on your plate this week. Any new challenges or wins?</p>
+        </div>
+        <div class="card accent-cyan">
+          <h3>Data in the wild</h3>
+          <p>Did anyone use data to make a decision or back up a claim at your internship this week? What did that look like?</p>
+        </div>
+      </div>
+      <div class="discuss-box" style="margin-top:28px;">
+        <div class="eyebrow">Discussion Prompt</div>
+        <p>Did you encounter a moment at your internship where someone said "we're seeing a pattern" or "X is causing Y"? What was the claim, and how did they support it?</p>
+      </div>
+    </div>
+    <div class="slide-num-tag">02</div>
+  </div>
+
+  <!-- SLIDE 3: QUOTE -->
+  <div class="slide" id="s-quote">
+    <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%;">
+      <div class="quote-circle">
+        <blockquote>
+          "The biggest question in data science is 'Why?' Why is this happening? If you notice a pattern, ask: Is there something wrong with the data, or is this an actual pattern? Can we conclude anything from it? Natural curiosity will give you a good foundation."
+        </blockquote>
+        <cite>CARLA GENTRY &nbsp;|&nbsp; Data Scientist, Talent Analytics</cite>
+      </div>
+      <p style="margin-top:24px; font-size:0.88rem; color:#888; text-align:center; max-width:420px;">Today we learn the tools data scientists use to answer that question — and you'll each become the class expert on one of them.</p>
+    </div>
+    <div class="slide-num-tag">03</div>
+  </div>
+
+  <!-- SLIDE 4: ROAD MAP -->
+  <div class="slide" id="s-roadmap">
+    <div class="eyebrow">Today's Plan</div>
+    <h2>Four Tools. One Question: Why?</h2>
+    <div class="red-rule"></div>
+    <p class="big-p" style="margin-top:4px;">Each technique below answers a different version of that question. By the end of class, you'll teach one of them to everyone else.</p>
+    <div style="display:flex; align-items:stretch; gap:0; margin:32px 0;">
+      <div style="background:var(--red); flex:1; min-height:72px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:10px; color:#fff; padding:16px 20px; text-align:center;">
+        <div style="font-size:0.7rem; font-weight:700; letter-spacing:0.1em; opacity:0.5; margin-bottom:4px;">TOOL 01</div>
+        <div style="font-size:0.9rem; font-weight:700;">Correlation</div>
+      </div>
+      <div style="align-self:center; font-size:1.4rem; color:#bbb; padding:0 8px;">→</div>
+      <div style="background:#2a2a2a; flex:1; min-height:72px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:10px; color:#fff; padding:16px 20px; text-align:center;">
+        <div style="font-size:0.7rem; font-weight:700; letter-spacing:0.1em; opacity:0.5; margin-bottom:4px;">TOOL 02</div>
+        <div style="font-size:0.9rem; font-weight:700;">Linear Regression</div>
+      </div>
+      <div style="align-self:center; font-size:1.4rem; color:#bbb; padding:0 8px;">→</div>
+      <div style="background:var(--teal); flex:1; min-height:72px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:10px; color:#fff; padding:16px 20px; text-align:center;">
+        <div style="font-size:0.7rem; font-weight:700; letter-spacing:0.1em; opacity:0.5; margin-bottom:4px;">TOOL 03</div>
+        <div style="font-size:0.9rem; font-weight:700;">Logistic Regression</div>
+      </div>
+      <div style="align-self:center; font-size:1.4rem; color:#bbb; padding:0 8px;">→</div>
+      <div style="background:var(--cyan); flex:1; min-height:72px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:10px; color:#1a1a1a; padding:16px 20px; text-align:center;">
+        <div style="font-size:0.7rem; font-weight:700; letter-spacing:0.1em; opacity:0.5; margin-bottom:4px;">TOOL 04</div>
+        <div style="font-size:0.9rem; font-weight:700;">Cluster Analysis</div>
+      </div>
+    </div>
+    <div class="three-col">
+      <div class="card">
+        <span class="pill pill-red">Ask</span>
+        <p style="margin-top:10px; font-size:0.88rem;">Are these two things related? How strongly, and in which direction?</p>
+      </div>
+      <div class="card">
+        <span class="pill pill-cyan">Predict</span>
+        <p style="margin-top:10px; font-size:0.88rem;">If I know X, what can I predict about Y? What's the likely outcome?</p>
+      </div>
+      <div class="card">
+        <span class="pill pill-yellow">Group</span>
+        <p style="margin-top:10px; font-size:0.88rem;">Who belongs together? What natural segments exist in this data?</p>
+      </div>
+    </div>
+    <div class="slide-num-tag">04</div>
+  </div>
+
+  <!-- SLIDE 5: TABLEAU BUILT-IN MODELS -->
+  <div class="slide" id="s-tableau">
+    <div class="corner-deco">
+      <svg width="130" height="130" viewBox="0 0 130 130"><rect x="70" y="-10" width="80" height="80" rx="8" fill="#3ab5d4" opacity="0.12"/></svg>
+    </div>
+    <div class="eyebrow">Before We Dive In</div>
+    <h2>Tableau Built-In Models</h2>
+    <div class="red-rule"></div>
+    <p class="big-p">You've already used some of Tableau's modeling features without realizing it. These are the building blocks that today's techniques expand on.</p>
+    <div class="three-col" style="margin-top:28px;">
+      <div class="card accent-red">
+        <h3>Constant Line</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">A fixed reference point — a target, a threshold, or a benchmark. Useful for asking "how does our data compare to this specific value?"</p>
+        <p style="font-size:0.8rem; color:#888; margin-top:10px;">Example: A sales target line at $50K per quarter.</p>
+      </div>
+      <div class="card accent-yellow">
+        <h3>Average Line</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">Shows the mean of your data. Instantly reveals which data points fall above or below the typical value — the simplest form of pattern detection.</p>
+        <p style="font-size:0.8rem; color:#888; margin-top:10px;">Example: Average episode rating across all 10 seasons.</p>
+      </div>
+      <div class="card accent-teal">
+        <h3>Confidence Intervals</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">Also known as run charts. Show the expected range around a trend line — if a data point falls outside the band, something unusual may be happening.</p>
+        <p style="font-size:0.8rem; color:#888; margin-top:10px;">Example: Predicting next month's sales within a likely range.</p>
+      </div>
+    </div>
+    <div class="discuss-box" style="margin-top:24px;">
+      <div class="eyebrow">The Connection</div>
+      <p>These built-in tools answer simple questions: What's typical? What stands out? Today's modeling techniques take the next step — they ask <em>why</em> something stands out and <em>what</em> we can predict from it.</p>
+    </div>
+    <div class="slide-num-tag">05</div>
+  </div>
+
+  <!-- SLIDE 6: THE ANOMALY -->
+  <div class="slide" id="s-anomaly">
+    <div class="eyebrow">Setting Up the Data</div>
+    <h2>What's Going On with Season 4, Episode 21?</h2>
+    <div class="red-rule"></div>
+    <div class="two-col">
+      <div>
+        <p class="big-p">Take a look at IMDB ratings for every Friends episode. Most cluster tightly. Then there's this one data point sitting way off by itself.</p>
+        <p style="margin-top:12px; font-size:0.88rem; color:#666;">It's "The One with the Invitation" — a clip show. Fans rated it the lowest of the series, but it still drew massive engagement. The data tells an interesting story about how quality and attention don't always move together.</p>
+        <div class="discuss-box" style="margin-top:20px;">
+          <div class="eyebrow">Think-Pair-Share (60 seconds)</div>
+          <p>Before we dig in: why might an episode have a low rating but unusually high vote count? What does that disconnect tell us?</p>
+        </div>
+      </div>
+      <div>
+        <canvas id="anomalyChart" width="380" height="280"></canvas>
+        <div class="scatter-label">IMDB Stars vs. Vote Count by Episode</div>
+      </div>
+    </div>
+    <div class="slide-num-tag">06</div>
+  </div>
+
+  <!-- SLIDE 7: CORRELATION -->
+  <div class="slide" id="s-correlation">
+    <div class="eyebrow">Tool 01</div>
+    <h2>Correlation</h2>
+    <div class="red-rule"></div>
+    <p class="big-p">Correlation measures how closely two variables move together — and in which direction. Do they rise and fall together, or does one go up while the other goes down?</p>
+    <div style="margin-top:16px;">
+      <div class="spectrum-bar" style="height:20px;"></div>
+      <div class="spectrum-labels" style="margin-top:6px;">
+        <span>Strong Negative &nbsp; -1</span>
+        <span style="text-align:center;">No Relationship &nbsp; 0</span>
+        <span>+1 &nbsp; Strong Positive</span>
+      </div>
+    </div>
+    <div class="three-col" style="margin-top:24px;">
+      <div class="card accent-red">
+        <h3 style="color:var(--red);">Strong Negative</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">More hours of Netflix → lower exam scores. One goes up while the other goes down.</p>
+        <p style="font-size:0.8rem; color:#888; margin-top:8px;">Example: r = -0.74</p>
+      </div>
+      <div class="card">
+        <h3>Weak / No Correlation</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">Shoe size → exam scores. No meaningful relationship between the two variables.</p>
+        <p style="font-size:0.8rem; color:#888; margin-top:8px;">Example: r = +0.03</p>
+      </div>
+      <div class="card accent-teal">
+        <h3 style="color:var(--teal);">Strong Positive</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">More hours studying → higher exam scores. Both variables move in the same direction.</p>
+        <p style="font-size:0.8rem; color:#888; margin-top:8px;">Example: r = +0.82</p>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
+      <div class="card" style="background:#f5f5f2;">
+        <h3>Strength Guide</h3>
+        <p style="font-size:0.84rem; margin-top:6px; line-height:1.7;">
+          ±0.9 – 1.0 &nbsp; Very strong &nbsp;&nbsp;|&nbsp;&nbsp;
+          ±0.7 – 0.9 &nbsp; Strong &nbsp;&nbsp;|&nbsp;&nbsp;
+          ±0.4 – 0.7 &nbsp; Moderate &nbsp;&nbsp;|&nbsp;&nbsp;
+          ±0.1 – 0.4 &nbsp; Weak &nbsp;&nbsp;|&nbsp;&nbsp;
+          0 – 0.1 &nbsp; Little to none
+        </p>
+      </div>
+    </div>
+    <div class="slide-num-tag">07</div>
+  </div>
+
+  <!-- SLIDE 8: CAUSATION -->
+  <div class="slide" id="s-causation">
+    <div class="eyebrow">Tool 01 — Watch Out</div>
+    <h2>Correlation Is Not Causation</h2>
+    <div class="red-rule"></div>
+    <div class="two-col">
+      <div>
+        <p>Two variables can move together perfectly and still have nothing to do with each other.</p>
+        <div class="caution-banner" style="margin-top:20px;">
+          Ice cream sales go up.<br>Drownings go up.<br>Does ice cream cause drownings?
+        </div>
+        <div class="confound-explain">
+          <h3 style="margin-bottom:6px;">The hidden variable: summer.</h3>
+          <p>Hot weather drives both ice cream purchases and swimming. The variable driving both outcomes is called a <strong>confounding variable</strong>. Controlling for it makes the fake relationship disappear.</p>
+        </div>
+      </div>
+      <div>
+        <div style="background:#fff; border:1.5px solid #e0e0dc; border-radius:12px; padding:20px;">
+          <h3 style="margin-bottom:14px;">Spot the Confounding Variable</h3>
+          <p style="font-size:0.88rem; margin-bottom:10px;"><strong>Countries with more TV sets per household have longer life expectancy.</strong> Does buying a TV make you live longer?</p>
+          <div class="toggle-group">
+            <button class="toggle-btn" onclick="checkConfoundReveal(this,'a','c','confound-reveal-1')">TVs emit health-improving radiation</button>
+            <button class="toggle-btn" onclick="checkConfoundReveal(this,'b','c','confound-reveal-1')">Longer-lived people watch more TV</button>
+            <button class="toggle-btn" onclick="checkConfoundReveal(this,'c','c','confound-reveal-1')">Wealth — richer countries have more TVs and better healthcare</button>
+          </div>
+          <div id="confound-reveal-1" style="display:none; margin-top:12px; border-radius:8px; padding:12px 14px; font-size:0.83rem; line-height:1.6;"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Full-width examples bar across bottom -->
+    <div class="full-width-example" style="margin-top:20px;">
+      <h3 style="margin-bottom:10px;">More Examples Worth Knowing</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px;">
+        <div>
+          <p style="font-size:0.85rem; color:#555; line-height:1.6;"><strong>Shoe size & reading ability</strong> in children correlate strongly — because <strong>age</strong> drives both. Older kids have bigger feet and read better.</p>
+        </div>
+        <div>
+          <p style="font-size:0.85rem; color:#555; line-height:1.6;"><strong>Hospital quality & patient mortality</strong> can correlate negatively — because <strong>sicker patients go to better hospitals</strong>, not because good hospitals are dangerous.</p>
+        </div>
+        <div>
+          <p style="font-size:0.85rem; color:#555; line-height:1.6;"><strong>US per capita mozzarella cheese consumption & civil engineering doctorates awarded</strong> tracked almost perfectly for a decade — a classic spurious correlation. No confounding variable, just random noise that happened to line up.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num-tag">08</div>
+  </div>
+
+  <!-- SLIDE 9: LINEAR REGRESSION -->
+  <div class="slide" id="s-linear">
+    <div class="eyebrow">Tool 02</div>
+    <h2>Linear Regression</h2>
+    <div class="red-rule"></div>
+    <p class="big-p">If I know X, what can I predict about Y? Linear regression draws the line that gets as close as possible to all the data points at once.</p>
+    <div class="two-col">
+      <div>
+        <div class="card accent-red" style="margin-bottom:12px;">
+          <h3>What it answers</h3>
+          <p style="font-size:0.87rem;">If this episode aired in year X, what rating would we predict? If a student studies X hours, what score is likely?</p>
+        </div>
+        <div class="card" style="margin-bottom:12px;">
+          <h3>When to use it</h3>
+          <p style="font-size:0.87rem;">Your outcome is a number (a score, a price, a temperature) and you expect a roughly straight-line relationship.</p>
+        </div>
+        <div class="card accent-yellow">
+          <h3>When to skip it</h3>
+          <p style="font-size:0.87rem;">Your outcome is yes/no, true/false, or one of several categories. For those, use logistic regression instead.</p>
+        </div>
+        <p style="margin-top:14px; font-size:0.83rem; color:#777;">In Tableau this is the default trend line model. Also called OLS — ordinary least squares.</p>
+      </div>
+      <div>
+        <svg id="linRegSVG" viewBox="0 0 340 240" style="background:#fff; border:1.5px solid #e0e0dc; border-radius:10px; width:100%;">
+          <line x1="40" y1="210" x2="320" y2="210" stroke="#ccc" stroke-width="1.5"/>
+          <line x1="40" y1="210" x2="40" y2="20" stroke="#ccc" stroke-width="1.5"/>
+          <text x="180" y="230" text-anchor="middle" font-size="10" fill="#999">Year of Production</text>
+          <text x="14" y="115" text-anchor="middle" font-size="10" fill="#999" transform="rotate(-90,14,115)">Avg. Rating</text>
+          <line id="bestFitLine" x1="50" y1="180" x2="310" y2="60" stroke="#c0392b" stroke-width="2" stroke-dasharray="5,3"/>
+        </svg>
+        <div class="scatter-label">Average rating by production year — regression line in red</div>
+        <div style="margin-top:10px; font-size:0.83rem; color:#555; background:#f5f5f2; padding:10px; border-radius:8px;">
+          The line is drawn to minimize the total distance between every dot and the line itself. That's the "least squares" part — it's literally minimizing the squared errors.
+        </div>
+      </div>
+    </div>
+    <div class="slide-num-tag">09</div>
+  </div>
+
+  <!-- SLIDE 10: LOGISTIC REGRESSION -->
+  <div class="slide" id="s-logistic">
+    <div class="eyebrow">Tool 03</div>
+    <h2>Logistic Regression</h2>
+    <div class="red-rule"></div>
+    <p class="big-p">Some questions have a yes or no answer. Will this customer cancel? Will this admitted student enroll? Will Ross and Rachel get back together? Logistic regression estimates the <em>probability</em> of one of those two outcomes.</p>
+    <div class="two-col">
+      <div>
+        <div class="card accent-teal" style="margin-bottom:12px;">
+          <h3>The S-Curve Explained</h3>
+          <p style="font-size:0.87rem;">Near the bottom: "almost certainly no." Near the top: "almost certainly yes." The steep middle section is where the model is making its toughest judgment calls.</p>
+        </div>
+        <div class="card" style="margin-bottom:12px;">
+          <h3>Real-world uses</h3>
+          <p style="font-size:0.87rem;">Credit risk scoring, spam filters, medical diagnosis tools, college admissions yield models, customer churn prediction.</p>
+        </div>
+        <div class="card" style="background:#fafaf8;">
+          <h3>Tableau note</h3>
+          <p style="font-size:0.87rem;">This one requires Python or R integration to run in Tableau. It's more advanced than what we'll build today, but worth understanding conceptually.</p>
+        </div>
+      </div>
+      <div>
+        <div style="background:#fff; border:1.5px solid #e0e0dc; border-radius:10px; padding:20px;">
+          <h3 style="margin-bottom:4px;">Will Ross and Rachel get back together?</h3>
+          <p style="font-size:0.8rem; color:#888; margin-bottom:14px;">Drag the slider to see how probability shifts as episodes apart increases.</p>
+          <div style="margin-bottom:10px;">
+            <label style="font-size:0.82rem; font-weight:600;">Episodes apart: <span id="epApart">5</span></label>
+            <input type="range" min="1" max="20" value="5" id="logSlider" style="width:100%; margin-top:6px;" oninput="updateLogistic(this.value)">
+          </div>
+          <div>
+            <div class="prob-row">
+              <span style="width:80px; font-size:0.78rem;">Get back together</span>
+              <div class="prob-bar-bg"><div class="prob-bar-fill" id="probYes" style="width:35%;"></div></div>
+              <span class="prob-label" id="probYesLabel">35%</span>
+            </div>
+            <div class="prob-row">
+              <span style="width:80px; font-size:0.78rem;">Stay apart</span>
+              <div class="prob-bar-bg"><div class="prob-bar-fill" id="probNo" style="width:65%; background:var(--red);"></div></div>
+              <span class="prob-label" id="probNoLabel">65%</span>
+            </div>
+          </div>
+          <p id="logCaption" style="font-size:0.8rem; color:#666; margin-top:12px; font-style:italic;"></p>
+        </div>
+        <div class="discuss-box" style="margin-top:14px;">
+          <div class="eyebrow">Connection to Admissions</div>
+          <p>Your college uses models like this right now — predicting which admitted students will actually enroll. RD Decision Day is coming. What variables do you think go into that model?</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num-tag">10</div>
+  </div>
+
+  <!-- SLIDE 11: CLUSTER ANALYSIS -->
+  <div class="slide" id="s-cluster">
+    <div class="eyebrow">Tool 04</div>
+    <h2>Cluster Analysis</h2>
+    <div class="red-rule"></div>
+    <p class="big-p">Clustering asks: who belongs together? Without being told the answer in advance, the algorithm finds natural groups in the data based on similarity alone.</p>
+    <div class="two-col">
+      <div>
+        <div class="card accent-cyan" style="margin-bottom:12px;">
+          <h3>The intuition</h3>
+          <p style="font-size:0.87rem;">You don't define the groups beforehand. You give the algorithm the data and it discovers the groupings that make the most internal sense — like sorting a room of strangers into friend groups based on their interests.</p>
+        </div>
+        <div class="card" style="margin-bottom:12px;">
+          <h3>How K-means works</h3>
+          <p style="font-size:0.87rem;">You pick a number of groups (k). The algorithm places a center point in each group, assigns every data point to the nearest center, and keeps adjusting until the groups are as tight as possible.</p>
+        </div>
+        <div class="discuss-box">
+          <div class="eyebrow">Look at the Data</div>
+          <p>These are fictional students clustered by financial aid amount and distance from home. Toggle between group counts — what patterns emerge? What might explain them?</p>
+        </div>
+      </div>
+      <div>
+        <div style="background:#fff; border:1.5px solid #e0e0dc; border-radius:10px; padding:20px;">
+          <h3 style="margin-bottom:8px;">Student Aid vs. Distance from Home</h3>
+          <p style="font-size:0.8rem; color:#888; margin-bottom:14px;">Fictional data. Select the number of groups to see how the algorithm segments students.</p>
+          <div class="toggle-group">
+            <button class="toggle-btn active" onclick="setK(2,this)">2 Groups</button>
+            <button class="toggle-btn" onclick="setK(3,this)">3 Groups</button>
+            <button class="toggle-btn" onclick="setK(4,this)">4 Groups</button>
+          </div>
+          <canvas id="clusterChart" width="320" height="220" style="margin-top:10px; border-radius:8px; border:1px solid #eee;"></canvas>
+          <p id="clusterCaption" style="font-size:0.78rem; color:#777; margin-top:8px;"></p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num-tag">11</div>
+  </div>
+
+  <!-- SLIDE 12: ADVANCED MODELING -->
+  <div class="slide" id="s-advanced">
+    <div class="eyebrow">Beyond Today</div>
+    <h2>Where the Field Goes Next</h2>
+    <div class="red-rule"></div>
+    <p class="big-p">The four tools you learned today are the foundation. Here's a glimpse at what's built on top of them — and what powers the algorithms we'll be critically examining next week.</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px;">
+      <div class="card accent-yellow">
+        <h3>Decision Trees</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">Maps out every possible path a decision could take — like a flowchart. Answers questions like "should we approve this loan?" by splitting data on yes/no conditions until it reaches an outcome.</p>
+      </div>
+      <div class="card accent-red">
+        <h3>Random Forest</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">Builds dozens of decision trees and combines their results into one prediction. More accurate than a single tree because it averages out individual errors.</p>
+      </div>
+      <div class="card accent-cyan">
+        <h3>Naive Bayes Classification</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">Uses probability to sort items into categories based on prior patterns. The backbone of spam filters — it learned what spam looks like from millions of examples.</p>
+      </div>
+      <div class="card accent-teal">
+        <h3>Neural Networks</h3>
+        <p style="font-size:0.87rem; margin-top:8px;">Loosely modeled on how the brain processes information. Layers of interconnected nodes learn patterns from massive datasets — the foundation of image recognition, voice assistants, and generative AI.</p>
+      </div>
+    </div>
+    <p style="margin-top:16px; font-size:0.85rem; color:#777; text-align:center;">These are the techniques behind the recommendation engines, content feeds, and matching algorithms we'll explore in this week's case study and readings.</p>
+    <div class="slide-num-tag">12</div>
+  </div>
+
+  <!-- SLIDE 13: JIGSAW LAUNCH -->
+  <div class="slide" id="s-jigsaw">
+    <div class="eyebrow">In-Class Exercise</div>
+    <h2>Your Turn to Teach.</h2>
+    <div class="red-rule"></div>
+    <p class="big-p">Each group gets one technique, one YouTube video, and Tableau's Superstore dataset. Build the analysis, then walk the class through what you found and how you did it.</p>
+    <div class="jigsaw-grid">
+      <div class="jigsaw-card jc-a">
+        <div class="tag">Group A</div>
+        <h3>Correlation Matrix</h3>
+        <p>Find and interpret the relationships between multiple Superstore variables at once — sales, profit, discount, quantity. Which pairs move together? Which don't?</p>
+      </div>
+      <div class="jigsaw-card jc-b">
+        <div class="tag">Group B</div>
+        <h3>Regression</h3>
+        <p>Build a linear regression model to predict Superstore profit. Which variable is the best predictor — sales, discount, shipping cost? How strong is the fit?</p>
+      </div>
+      <div class="jigsaw-card jc-c">
+        <div class="tag">Group C</div>
+        <h3>Clustering</h3>
+        <p>Segment Superstore customers or products into natural groups. How many clusters does Tableau suggest? What do the groups have in common?</p>
+      </div>
+    </div>
+    <div style="margin-top:24px;">
+      <div class="card" style="border-left:4px solid var(--yellow);">
+        <h3>When you teach the class</h3>
+        <p style="font-size:0.85rem;">Walk us through what you built, what you found, and one thing that surprised you. You don't need to be a master — being the expert on your piece is enough.</p>
+      </div>
+    </div>
+    <div class="slide-num-tag">13</div>
+  </div>
+
+  <!-- SLIDE 14: CASE STUDY & REFLECTION -->
+  <div class="slide" id="s-casestudy">
+    <div style="max-width:800px; margin:0 auto;">
+      <div class="eyebrow" style="text-align:center;">Case Study 6 &nbsp;+&nbsp; Reflection Assignment</div>
+      <h1 style="font-size:clamp(1.6rem,3.5vw,2.6rem); text-align:center; margin-bottom:8px;">Algorithms & Human Emotions</h1>
+      <p style="text-align:center; font-size:0.92rem; color:#666;">All of this week's sources touch on the intersection of algorithms and what it means to be human.</p>
+      <div class="red-rule" style="margin:16px auto;"></div>
+
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:24px;">
+        <a href="https://www.youtube.com/watch?v=d6wG_sAdP0U" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:var(--black); color:#fff; text-decoration:none; border-radius:10px; padding:12px 18px; font-weight:700; font-size:0.85rem; transition:opacity 0.2s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+          Watch: Hacking OKCupid
+        </a>
+        <a href="https://www.youtube.com/watch?v=K05-DOiXnF0&feature=youtu.be" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:var(--red); color:#fff; text-decoration:none; border-radius:10px; padding:12px 18px; font-weight:700; font-size:0.85rem; transition:opacity 0.2s;" onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+          Watch: She's Your Lobster
+        </a>
+      </div>
+
+      <div class="discuss-box" style="margin-bottom:20px;">
+        <div class="eyebrow">Reflection Paper Prompt</div>
+        <p style="font-size:0.92rem; line-height:1.7;">All of this week's sources touch on the intersection of algorithms and human emotions. Write a reflection paper discussing your response to this topic. Next week we'll dive deep in class — spend time wrestling with these questions to prepare.</p>
+      </div>
+
+      <div class="reflection-grid">
+        <div class="reflection-card">
+          <div class="q-num">Consider</div>
+          <p>Is it ethical for a data scientist to hack an algorithm to tip the scales in their favor? How did dates 1–87 feel when their "100% match" didn't pan out?</p>
+        </div>
+        <div class="reflection-card alt">
+          <div class="q-num">Consider</div>
+          <p>Is it ethical for companies to influence the emotions of their users without informed consent? What does that look like in practice?</p>
+        </div>
+        <div class="reflection-card alt2">
+          <div class="q-num">Consider</div>
+          <p>What is the responsibility of the user vs. the company in these scenarios? Where does the line fall?</p>
+        </div>
+        <div class="reflection-card alt3">
+          <div class="q-num">Consider</div>
+          <p>You're now around the age Zuckerberg was when he founded Facebook — but with 20 years of hindsight. What would you do differently?</p>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <span class="pill pill-red">Ethics</span>
+        <span class="pill pill-cyan">Algorithms</span>
+        <span class="pill pill-yellow">Agency</span>
+        <span style="display:inline-block; padding:4px 12px; font-size:0.72rem; font-weight:700; background:#f0e8ff; color:#5a2d9a; border-radius:20px; text-transform:uppercase; letter-spacing:0.06em;">Human Dignity</span>
+      </div>
+    </div>
+    <div class="slide-num-tag">14</div>
+  </div>
+
+</div>
+
+<!-- NAV -->
+<div class="nav" style="bottom:24px;">
+  <button id="prevBtn" onclick="changeSlide(-1)" disabled>←</button>
+  <div class="progress-dots" id="progressDots"></div>
+  <span id="slideCounter">1 / 14</span>
+  <button id="nextBtn" onclick="changeSlide(1)">→</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let cur = 0;
+
+function changeSlide(dir) {
+  slides[cur].classList.remove('active');
+  cur = Math.max(0, Math.min(total - 1, cur + dir));
+  slides[cur].classList.add('active');
+  document.getElementById('slideCounter').textContent = (cur+1) + ' / ' + total;
+  document.getElementById('prevBtn').disabled = cur === 0;
+  document.getElementById('nextBtn').disabled = cur === total - 1;
+  updateDots();
+  if (cur === 5) drawAnomalyChart();
+  if (cur === 8) drawLinRegSVG();
+  if (cur === 9) updateLogistic(document.getElementById('logSlider').value);
+  if (cur === 10) drawCluster(currentK);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeSlide(1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changeSlide(-1);
+});
+
+function updateDots() {
+  document.querySelectorAll('.pdot').forEach((d,i) => d.classList.toggle('active', i === cur));
+}
+
+const dotWrap = document.getElementById('progressDots');
+for (let i = 0; i < total; i++) {
+  const d = document.createElement('div');
+  d.className = 'pdot' + (i===0?' active':'');
+  d.style.cursor = 'pointer';
+  d.addEventListener('click', () => { slides[cur].classList.remove('active'); cur = i; slides[cur].classList.add('active'); document.getElementById('slideCounter').textContent = (cur+1)+' / '+total; document.getElementById('prevBtn').disabled = cur===0; document.getElementById('nextBtn').disabled = cur===total-1; updateDots(); });
+  dotWrap.appendChild(d);
+}
+
+// FRIENDS DATA
+const episodes = [];
+const seasonRatings = [8.3, 8.4, 8.45, 8.5, 8.5, 8.4, 8.35, 8.4, 8.3, 8.25];
+for (let s = 0; s < 10; s++) {
+  const eps = s < 2 ? 24 : (s === 9 ? 18 : 24);
+  for (let e = 0; e < eps; e++) {
+    const base = seasonRatings[s];
+    const rating = +(base + (Math.random()-0.5)*0.5).toFixed(2);
+    const votes = Math.round(2000 + rating * 400 + Math.random()*1500);
+    episodes.push({ s: s+1, e: e+1, rating, votes });
+  }
+}
+const anomIdx = episodes.findIndex(ep => ep.s===4 && ep.e===21);
+if (anomIdx >= 0) { episodes[anomIdx].rating = 7.1; episodes[anomIdx].votes = 10200; }
+
+function drawAnomalyChart() {
+  const cv = document.getElementById('anomalyChart');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+  const pad = {t:20,r:20,b:40,l:50};
+  const minR = 6.8, maxR = 9.2, minV = 1000, maxV = 12000;
+  function px(r,v) {
+    return [ pad.l + (r-minR)/(maxR-minR)*(W-pad.l-pad.r), H - pad.b - (v-minV)/(maxV-minV)*(H-pad.t-pad.b) ];
+  }
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,H-pad.b); ctx.lineTo(W-pad.r,H-pad.b); ctx.stroke();
+  ctx.fillStyle='#aaa'; ctx.font='10px Inter';
+  ctx.fillText('Star Rating →',W/2-20,H-6);
+  ctx.save(); ctx.translate(12,H/2); ctx.rotate(-Math.PI/2); ctx.fillText('Vote Count →',0,0); ctx.restore();
+  episodes.forEach(ep => {
+    const [x,y] = px(ep.rating, ep.votes);
+    const isAnom = ep.s===4 && ep.e===21;
+    ctx.beginPath(); ctx.arc(x,y,isAnom?7:3.5,0,Math.PI*2);
+    ctx.fillStyle = isAnom ? '#c0392b' : 'rgba(58,181,212,0.5)';
+    ctx.fill();
+    if (isAnom) {
+      ctx.strokeStyle='#c0392b'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(x,y,12,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle='#c0392b'; ctx.font='bold 10px Inter';
+      ctx.fillText('S4E21',x+10,y-5);
+    }
+  });
+}
+drawAnomalyChart();
+
+function drawLinRegSVG() {
+  const svg = document.getElementById('linRegSVG');
+  if (!svg) return;
+  svg.querySelectorAll('.datapt').forEach(el => el.remove());
+  const minY=1994, maxY=2004, minS=8.2, maxS=8.8;
+  const yearData = [
+    {y:1994,s:8.3},{y:1995,s:8.45},{y:1996,s:8.5},{y:1997,s:8.55},
+    {y:1998,s:8.5},{y:1999,s:8.45},{y:2000,s:8.4},{y:2001,s:8.35},
+    {y:2002,s:8.4},{y:2003,s:8.5},{y:2004,s:8.65}
+  ];
+  function toSVG(yr,sc) {
+    return [ 50 + (yr-minY)/(maxY-minY)*260, 200 - (sc-minS)/(maxS-minS)*170 ];
+  }
+  yearData.forEach(d => {
+    const [x,y] = toSVG(d.y,d.s);
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',5);
+    c.setAttribute('fill','rgba(58,181,212,0.7)'); c.setAttribute('class','datapt');
+    svg.appendChild(c);
+  });
+}
+
+function updateLogistic(val) {
+  val = parseInt(val);
+  document.getElementById('epApart').textContent = val;
+  const x = (val - 10) * 0.35;
+  const prob = 1 / (1 + Math.exp(x));
+  const pct = Math.round(prob * 100);
+  document.getElementById('probYes').style.width = pct + '%';
+  document.getElementById('probNo').style.width = (100-pct) + '%';
+  document.getElementById('probYesLabel').textContent = pct + '%';
+  document.getElementById('probNoLabel').textContent = (100-pct) + '%';
+  const captions = [
+    [0,15,"The model says: very unlikely — too many episodes apart."],
+    [15,35,"Starting to look unlikely. Distance is taking its toll."],
+    [35,65,"The model is uncertain. This is the steepest part of the S-curve."],
+    [65,85,"Looking likely — they haven't been apart long."],
+    [85,101,"Almost certainly yes — the spark hasn't had time to fade."]
+  ];
+  for (const [lo,hi,txt] of captions) { if (pct >= lo && pct < hi) { document.getElementById('logCaption').textContent = txt; break; } }
+}
+updateLogistic(5);
+
+const clusterColors = ['#c0392b','#3ab5d4','#f0b429','#2a6b6b'];
+let currentK = 2;
+
+function setK(k, btn) {
+  currentK = k;
+  document.querySelectorAll('#s-cluster .toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  drawCluster(k);
+}
+
+const studentData = [
+  [4200,180],[5800,420],[3900,750],[6200,310],[4700,580],[5100,900],[6800,220],[4400,640],
+  [5500,480],[3700,820],[6100,350],[4900,710],[5300,160],[6600,540],[4100,670],[5700,390],
+  [38000,250],[42000,900],[35000,1400],[44000,550],[39000,1650],[41000,320],[36000,1100],[43000,780],
+  [37000,1300],[40000,430],[45000,1750],[38500,620],[36500,970],[43500,1500],[39500,200],[41500,1200],
+  [16000,1450],[18500,1700],[14000,1850],[20000,1580],[15500,1320],[17000,1780],[13500,1250],[19000,1620],
+  [16500,1900],[18000,1380],[14500,1550],[20500,1480],[15000,1720],[17500,1840],[13000,1160],[19500,1680],
+  [22000,700],[28000,1050],[12000,880],[31000,560],[9000,1200],[24000,320],[19000,1380],[26000,760],
+  [11000,440],[29000,1100],[17000,950],[23000,600],[8500,1500],[32000,280],[21000,820],[27000,1250],
+];
+
+function drawCluster(k) {
+  const cv = document.getElementById('clusterChart');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0,0,W,H);
+  const pad = {t:16,r:20,b:36,l:52};
+  const minA=3000,maxA=50000,minD=0,maxD=2000;
+  function px(a,d) {
+    return [ pad.l+(a-minA)/(maxA-minA)*(W-pad.l-pad.r), H-pad.b-(d-minD)/(maxD-minD)*(H-pad.t-pad.b) ];
+  }
+  ctx.strokeStyle='#eee'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,H-pad.b); ctx.lineTo(W-pad.r,H-pad.b); ctx.stroke();
+  ctx.fillStyle='#aaa'; ctx.font='9px Inter';
+  ctx.fillText('Financial Aid →', W/2-20, H-4);
+  ctx.save(); ctx.translate(12,H/2); ctx.rotate(-Math.PI/2); ctx.fillText('Distance from Home →',0,0); ctx.restore();
+
+  const seeds = Array.from({length:k},(_,i)=>({
+    aid: minA + (i+0.5)*(maxA-minA)/k, dist: minD + (i+0.5)*(maxD-minD)/k
+  }));
+  let assignments = new Array(studentData.length).fill(0);
+  for (let iter=0; iter<8; iter++) {
+    studentData.forEach((pt,i)=>{
+      let best=0, bd=Infinity;
+      seeds.forEach((s,si)=>{ const d=Math.hypot((pt[0]-s.aid)/10000,(pt[1]-s.dist)/500); if(d<bd){bd=d;best=si;} });
+      assignments[i]=best;
+    });
+    seeds.forEach((s,si)=>{
+      const pts=studentData.filter((_,i)=>assignments[i]===si);
+      if(pts.length){ s.aid=pts.reduce((a,p)=>a+p[0],0)/pts.length; s.dist=pts.reduce((a,p)=>a+p[1],0)/pts.length; }
+    });
+  }
+  studentData.forEach((pt,i)=>{
+    const [x,y]=px(pt[0],pt[1]);
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle=clusterColors[assignments[i]]+'cc'; ctx.fill();
+  });
+  seeds.forEach((s,si)=>{
+    const [x,y]=px(s.aid,s.dist);
+    ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2);
+    ctx.fillStyle=clusterColors[si]; ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.fill(); ctx.stroke();
+  });
+  const capts = {
+    2: "2 groups: students split mainly by financial aid level and proximity to home.",
+    3: "3 groups: a middle segment emerges — moderate aid, mid-range distance.",
+    4: "4 groups: more granular segments. Are any of these meaningful for admissions or financial aid policy?"
+  };
+  document.getElementById('clusterCaption').textContent = capts[k];
+}
+
+function checkConfoundReveal(btn, chosen, correct, revealId) {
+  btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const reveal = document.getElementById(revealId);
+  reveal.style.display = 'block';
+  if (chosen === correct) {
+    reveal.style.background = '#e8f5f0'; reveal.style.color = '#2a6b6b'; reveal.style.border = '1.5px solid #a8d8c8';
+    reveal.innerHTML = '<strong>Correct.</strong> Wealth is the confounding variable — richer countries can afford more consumer electronics <em>and</em> invest more in healthcare. The TV itself has nothing to do with it.';
+  } else {
+    reveal.style.background = '#fdf0f0'; reveal.style.color = '#c0392b'; reveal.style.border = '1.5px solid #f0c0c0';
+    reveal.innerHTML = 'Not quite — think about what widespread TV ownership actually signals about a society. What else comes with that level of economic development?';
+  }
+}
+</script>
+</body>
+</html>
